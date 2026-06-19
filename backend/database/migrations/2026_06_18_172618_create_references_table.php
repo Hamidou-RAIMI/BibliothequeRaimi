@@ -21,7 +21,7 @@ return new class extends Migration
             $table->enum('language', ['fr', 'en', 'autre'])->default('fr');
             $table->enum('document_type', ['livre', 'memoire', 'these', 'article', 'revue', 'rapport', 'guide', 'autre'])->notNull();
             $table->foreignId('category_id')->constrained('categories')->onDelete('cascade');
-            $table->foreignId('publisher_id')->constrained('publishers')->onDelete('set null');
+            $table->foreignId('publisher_id')->nullable()->constrained('publishers')->nullOnDelete();
             $table->foreignId('uploaded_by')->constrained('users')->onDelete('cascade');
             $table->string('cover_image', 255)->nullable();
             $table->string('file_path', 255)->nullable();

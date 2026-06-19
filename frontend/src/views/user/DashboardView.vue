@@ -77,7 +77,6 @@ const handleLogout = async () => {
           </button>
         </div>
       </div>
-
       <!-- Not Authenticated -->
       <div v-else class="bg-yellow-50 border-2 border-yellow-200 rounded-lg p-8 text-center">
         <h2 class="text-2xl font-bold text-gray-800 mb-4">connectez vous pour lire</h2>
