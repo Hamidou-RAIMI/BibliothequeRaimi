@@ -21,6 +21,7 @@ export const useUserStore = defineStore('user', () => {
     } catch (err) {
       error.value = err.response?.data?.message || 'Erreur lors du chargement des utilisateurs'
       console.error('Erreur fetchUsers:', err)
+      throw err
     } finally {
       loading.value = false
     }
@@ -38,6 +39,7 @@ export const useUserStore = defineStore('user', () => {
     } catch (err) {
       error.value = err.response?.data?.message || 'Erreur lors du chargement de l\'utilisateur'
       console.error('Erreur fetchUser:', err)
+      throw err
     } finally {
       loading.value = false
     }
@@ -66,24 +68,31 @@ export const useUserStore = defineStore('user', () => {
   // ACTION 4 : MODIFIER UN UTILISATEUR EXISTANT
   // ========================================================================
   const updateUser = async (id, userData) => {
-    loading.value = true
-    error.value = null
-    try {
-      const response = await client.put(`/users/${id}`, userData)
-      // On met à jour l'utilisateur dans la liste locale
-      const index = users.value.findIndex(u => u.id === id)
-      if (index !== -1) {
-        users.value[index] = response.data.data
-      }
-      return response.data
-    } catch (err) {
-      error.value = err.response?.data?.message || 'Erreur lors de la modification de l\'utilisateur'
-      console.error('Erreur updateUser:', err)
-      throw err
-    } finally {
-      loading.value = false
+  loading.value = true
+  error.value = null
+  try {
+    // Créer une copie des données
+    const data = { ...userData }
+    // Supprimer le password si c'est une chaîne vide
+    if (data.password === '') {
+      delete data.password
     }
+    // Maintenant envoyer la requête avec les données nettoyées
+    const response = await client.put(`/users/${id}`, data)
+    // On met à jour l'utilisateur dans la liste locale
+    const index = users.value.findIndex(u => u.id === id)
+    if (index !== -1) {
+      users.value[index] = response.data.data
+    }
+    return response.data
+  } catch (err) {
+    error.value = err.response?.data?.message || 'Erreur lors de la modification de l\'utilisateur'
+    console.error('Erreur updateUser:', err)
+    throw err
+  } finally {
+    loading.value = false
   }
+}
 
   // ========================================================================
   // ACTION 5 : SUPPRIMER UN UTILISATEUR

@@ -1,6 +1,6 @@
-# 🔐 Gestion des Utilisateurs - Documentation
+#  Gestion des Utilisateurs - Documentation
 
-## 📝 Résumé
+##  Résumé
 Implémentation complète de la gestion des utilisateurs pour la bibliothèque numérique, avec :
 - Backend Laravel (contrôleur, routes, policy)
 - Frontend Vue.js + Pinia + PrimeIcons
@@ -9,7 +9,7 @@ Implémentation complète de la gestion des utilisateurs pour la bibliothèque n
 
 ---
 
-## 📦 Backend - Laravel
+##  Backend - Laravel
 
 ### 1. Fichiers Créés/Modifiés
 | Fichier | Action |
@@ -53,7 +53,7 @@ Règles d'autorisation :
 
 ---
 
-## 🎨 Frontend - Vue.js
+##  Frontend - Vue.js
 
 ### 1. Fichiers Créés/Modifiés
 | Fichier | Action |
@@ -79,18 +79,18 @@ Fonctionnalités :
 
 #### Pages de gestion (Admin + RH)
 Fonctionnalités de la page :
-- 📋 Tableau des utilisateurs (nom, prénom, email, téléphone, rôle, statut)
-- ➕ Bouton "Ajouter un utilisateur" avec modale
-- ✏️ Bouton "Modifier" avec modale pré-remplie
-- 🗑️ Bouton "Supprimer" avec confirmation (seul Admin)
-- 🔘 Bouton "Actif/Inactif" pour basculer le statut en 1 clic
-- ⏳ Indicateur de chargement
-- ❌ Gestion des erreurs
-- 🎨 Badges de rôle colorés
+-  Tableau des utilisateurs (nom, prénom, email, téléphone, rôle, statut)
+-  Bouton "Ajouter un utilisateur" avec modale
+-  Bouton "Modifier" avec modale pré-remplie
+-  Bouton "Supprimer" avec confirmation (seul Admin)
+-  Bouton "Actif/Inactif" pour basculer le statut en 1 clic
+-  Indicateur de chargement
+-  Gestion des erreurs
+-  Badges de rôle colorés
 
 ---
 
-## ✨ Fonctionnalités Principales
+##  Fonctionnalités Principales
 
 ### 1. CRUD Utilisateurs
 | Action | Rôles autorisés |
@@ -112,7 +112,7 @@ Fonctionnalités de la page :
 
 ---
 
-## 🚀 Comment Utiliser
+##  Comment Utiliser
 
 ### 1. Lancer le backend
 ```powershell
@@ -135,7 +135,7 @@ Utilisez les comptes créés par les seeders :
 
 ---
 
-## 📝 Notes Importantes
+##  Notes Importantes
 - Les mots de passe sont hachés avant d'être stockés
 - Les routes API sont protégées par Sanctum
 - Les politiques d'autorisation (Policy) vérifient les droits avant chaque action

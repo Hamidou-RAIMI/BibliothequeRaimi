@@ -54,7 +54,7 @@ class UserSeeder extends Seeder
             'email' => 'responsable.demande@bibliotheque.com',
             'phone' => '0112233445',
             'password' => Hash::make('password'),
-            'role' => 'responsable_demande', // Rôle CORRIGÉ !
+            'role' => 'responsable_demande',
             'status' => 'active',
             'email_verified_at' => now(),
         ]);

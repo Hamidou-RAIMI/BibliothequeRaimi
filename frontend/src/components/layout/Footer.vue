@@ -1,15 +1,15 @@
 <script setup>
-import { useRouter } from 'vue-router'
+// import { useRouter } from 'vue-router'
 
-const router = useRouter()
+// const router = useRouter()
 
-const handleClick = () => {
-  router.push('/login')
-}
+// const handleClick = () => {
+//   router.push('/login')
+// }
 </script>
 
 <template>
-  <footer class="bg-stone-900 text-stone-400 py-12">
+  <!-- <footer class="bg-stone-900 text-stone-400 py-12">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid md:grid-cols-4 gap-8">
       <div>
         <div class="flex items-center gap-2 mb-4">
@@ -43,7 +43,7 @@ const handleClick = () => {
         </div>
       </div>
     </div>
-  </footer>
+  </footer> -->
 </template>
 
 <style scoped></style>

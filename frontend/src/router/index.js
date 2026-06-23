@@ -22,7 +22,7 @@ const router = createRouter({
       name: 'register',
       component: RegisterView,
     },
-    // ADMIN
+    // ADMIN---------------------------
     {
       path: '/admin',
       component: () => import('../layouts/AdminLayout.vue'),
@@ -33,18 +33,43 @@ const router = createRouter({
           name: 'admin-dashboard',
           component: () => import('../views/admin/DashboardView.vue'),
         },
+        {
+          path: 'utilisateurs',
+          name: 'admin-utilisateurs',
+          component: () => import('../views/admin/UtilisateursView.vue'),
+        },
+        {
+          path: 'references',
+          name: 'admin-references',
+          component: () => import('../views/admin/ReferencesView.vue'),
+        },
+        {
+          path: 'auteur',
+          name: 'admin-authors',
+          component: () => import('../views/admin/AuthorsView.vue'),
+        },
+        {
+          path: 'categories',
+          name: 'admin-categories',
+          component: () => import('../views/admin/CategoriesView.vue'),
+        },
+        {
+          path: 'editeurs',
+          name: 'admin-publishers',
+        component: () => import('../views/admin/PublishersView.vue'),
+        }
       ] 
     },
     // RESPONSABLE_D
     {
-      path: '/responsable_d',
+      path: '/responsable_demande',
       component: () => import('../layouts/AdminLayout.vue'),
-      meta: { requiresAuth: true, role: 'responsable_d' },
+      meta: { requiresAuth: true, role: 'responsable_demande' },
       children: [
         {
           path: 'dashboard',
-          name: 'responsable_d-dashboard',
-          component: () => import('../views/responsable_D/DashboardView.vue'),
+          name: 'responsable_demande-dashboard',
+          component: () => import('../views/responsable_Demande/DashboardView.vue'),
         }
       ] 
     },
@@ -58,7 +83,12 @@ const router = createRouter({
           path: 'dashboard',
           name: 'responsable_rh-dashboard',
           component: () => import('../views/responsable_Rh/DashboardView.vue'),
-        }
+        },
+        {
+          path: 'utilisateurs',
+          name: 'responsable_rh-utilisateurs',
+          component: () => import('../views/responsable_Rh/UtilisateursView.vue'),
+        },
       ] 
     },
     // USER
@@ -77,69 +107,57 @@ const router = createRouter({
   ]
 })
 
-// Navigation guard
-router.beforeEach(async (to, from, next) => {
+// Fonction utilitaire pour centraliser les redirections basées sur le rôle
+const getDashboardRoute = (role) => {
+  switch (role) {
+    case 'admin':
+      return '/admin/dashboard'
+    case 'responsable_demande':
+      return '/responsable_demande/dashboard'
+    case 'responsable_rh':
+      return '/responsable_rh/dashboard'
+    case 'user':
+      return '/user/dashboard'
+    default:
+      return '/'
+  }
+}
+
+// Navigation guard moderne sans callback next()
+router.beforeEach(async (to, from) => {
   const authStore = useAuthStore()
   
-  // Fetch utilisateur si non authentifié et que l'utilisateur est connecté (par exemple, après un rafraîchissement de la page)
+  // Récupère l'utilisateur si non authentifié en local mais session active côté API (ex: rafraîchissement)
   if (!authStore.user && !authStore.isAuthenticated) {
     try {
       await authStore.fetchUser()
     } catch (e) {
-      // Utilisateurr n'est pas authentifier
+      // L'utilisateur n'est pas authentifié, échec silencieux attendu
     }
   }
 
-  // verifie si la route a besoin d'authentification et si l'utilisateur est authentifié
+  // 1. Vérification des routes nécessitant une authentification
   if (to.meta.requiresAuth) {
     if (!authStore.isAuthenticated) {
-      next('/login')
-    } else if (to.meta.role && authStore.user?.role !== to.meta.role) {
-      // Redirige l'utilisateur vers sa page de tableau de bord en fonction de son rôle
-      const role = authStore.user.role
-      switch(role) {
-        case 'admin':
-          next('/admin/dashboard')
-          break
-        case 'responsable_d':
-          next('/responsable_d/dashboard')
-          break
-        case 'responsable_rh':
-          next('/responsable_rh/dashboard')
-          break
-        case 'user':
-          next('/user/dashboard')
-          break
-        default:
-          next('/')
-      }
-    } else {
-      next()
+      return '/login'
     }
-  } else {
-    // Public routes - si l'utilisateur est déjà connecté, redirige vers le tableau de bord approprié
-    if (authStore.isAuthenticated && (to.path === '/login' || to.path === '/register')) {
-      const role = authStore.user.role
-      switch(role) {
-        case 'admin':
-          next('/admin/dashboard')
-          break
-        case 'responsable_d':
-          next('/responsable_d/dashboard')
-          break
-        case 'responsable_rh':
-          next('/responsable_rh/dashboard')
-          break
-        case 'user':
-          next('/user/dashboard')
-          break
-        default:
-          next('/')
-      }
-    } else {
-      next()
+    
+    // Vérification stricte des autorisations de rôle
+    if (to.meta.role && authStore.user?.role !== to.meta.role) {
+      return getDashboardRoute(authStore.user?.role)
     }
+    
+    // Si authentifié et rôle correct, la navigation continue implicitement
+    return true
   }
+
+  // 2. Vérification des routes publiques (Login / Register) : Redirection automatique si déjà connecté
+  if (authStore.isAuthenticated && (to.path === '/login' || to.path === '/register')) {
+    return getDashboardRoute(authStore.user?.role)
+  }
+
+  // Autorise l'accès aux autres routes publiques
+  return true
 })
 
 export default router

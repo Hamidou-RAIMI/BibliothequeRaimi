@@ -6,7 +6,6 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\Rules\Enum;
 use Illuminate\Support\Facades\Validator;
 
 class UserController extends Controller
@@ -27,8 +26,7 @@ class UserController extends Controller
      */
     public function index()
     {
-        // VÉRIFICATION DES DROITS : seul Admin/RH peuvent accéder à la liste
-        $this->authorize('viewAny', User::class);
+        
         
         // Récupère TOUS les utilisateurs depuis la base de données
         // Si tu veux ajouter une pagination ou des filtres plus tard, tu peux modifier ça !
@@ -69,8 +67,7 @@ class UserController extends Controller
             ], 404);
         }
 
-        // VÉRIFICATION DES DROITS : on autorise ou non l'accès avec la Policy
-        $this->authorize('view', $user);
+       
 
         // Si on a trouvé l'utilisateur, on renvoie ses informations
         return response()->json([
@@ -95,8 +92,7 @@ class UserController extends Controller
      */
     public function store(Request $request)
     {
-        // VÉRIFICATION DES DROITS : a-t-on le droit de créer un utilisateur ?
-        $this->authorize('create', User::class);
+       
 
         // =====================================================================
         // 1. VALIDATION DES DONNÉES (TRÈS IMPORTANT !)
@@ -109,8 +105,8 @@ class UserController extends Controller
             'email' => 'required|email|unique:users,email', // Email obligatoire, format valide, unique dans la table users
             'phone' => 'nullable|string|max:20', // Téléphone facultatif, texte, max 20 caractères
             'password' => 'required|string|min:6', // Mot de passe obligatoire, min 6 caractères
-            'role' => ['required', new Enum(['admin', 'responsable_rh', 'responsable_d', 'user'])], // Rôle doit être l'un des 4 valeurs autorisées
-            'status' => ['required', new Enum(['active', 'inactive', 'suspended'])] // Statut doit être l'un des 3 valeurs autorisées
+            'role' => ['required', 'in:admin,responsable_rh,responsable_demande,user'], // Rôle doit être l'un des 4 valeurs autorisées
+            'status' => ['required', 'in:active,inactive,suspended'] // Statut doit être l'un des 3 valeurs autorisées
         ]);
 
         // Si la validation échoue, on renvoie les erreurs au frontend
@@ -130,8 +126,6 @@ class UserController extends Controller
             'last_name' => $request->last_name,
             'email' => $request->email,
             'phone' => $request->phone,
-            // IMPORTANT : On hache (crypte) le mot de passe avant de l'enregistrer !
-            // Jamais de mot de passe en clair dans la base de données !
             'password' => Hash::make($request->password),
             'role' => $request->role,
             'status' => $request->status,
@@ -177,8 +171,7 @@ class UserController extends Controller
             ], 404);
         }
 
-        // VÉRIFICATION DES DROITS : a-t-on le droit de modifier cet utilisateur ?
-        $this->authorize('update', $user);
+        
 
         // =====================================================================
         // 2. VALIDATION DES DONNÉES
@@ -191,8 +184,8 @@ class UserController extends Controller
             'phone' => 'nullable|string|max:20',
             // Mot de passe est "sometimes", on ne le change que si on envoie un nouveau
             'password' => 'sometimes|string|min:6',
-            'role' => ['sometimes', new Enum(['admin', 'responsable_rh', 'responsable_d', 'user'])],
-            'status' => ['sometimes', new Enum(['active', 'inactive', 'suspended'])]
+            'role' => ['sometimes', 'in:admin,responsable_rh,responsable_demande,user'],
+            'status' => ['sometimes', 'in:active,inactive,suspended']
         ]);
 
         if ($validator->fails()) {
@@ -253,8 +246,7 @@ class UserController extends Controller
             ], 404);
         }
 
-        // VÉRIFICATION DES DROITS : seul l'admin peut supprimer !
-        $this->authorize('delete', $user);
+        
 
         // On le supprime !
         $user->delete();
@@ -290,8 +282,7 @@ class UserController extends Controller
             ], 404);
         }
 
-        // VÉRIFICATION DES DROITS : Admin/RH peuvent changer le statut
-        $this->authorize('toggleStatus', $user);
+        
 
         // On bascule le statut : si c'est active, on met inactive, et vice versa !
         $user->status = $user->status === 'active' ? 'inactive' : 'active';
