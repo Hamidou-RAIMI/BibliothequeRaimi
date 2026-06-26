@@ -59,8 +59,15 @@ class DepositeRequestController extends Controller
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
             'proposed_file' => 'required|string|max:255',
-            'applicant_id' => 'required|exists:users,id',
-            'assigned_manager_id' => 'nullable|exists:users,id',
+            'subtitle' => 'nullable|string|max:255',
+            'abstract' => 'nullable|string',
+            'isbn' => 'nullable|string|max:50',
+            'publication_year' => 'nullable|integer',
+            'language' => 'nullable|in:fr,en,autre',
+            'document_type' => 'nullable|in:livre,memoire,these,article,revue,rapport,guide,autre',
+            'category_id' => 'nullable|exists:categories,id',
+            'publisher_id' => 'nullable|exists:publishers,id',
+            'pages' => 'nullable|integer',
         ]);
 
         if ($validator->fails()) {
@@ -72,6 +79,7 @@ class DepositeRequestController extends Controller
         }
 
         $data = $request->all();
+        $data['applicant_id'] = $request->user()->id;
         $demande = DepositeRequest::create($data);
         $demande->load(['applicant', 'assignedManager']);
 

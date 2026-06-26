@@ -4,6 +4,7 @@ import {
   LayoutDashboard, 
   Users, 
   Package, 
+  FileText,
   X
 } from 'lucide-vue-next';
 import { useRoute } from 'vue-router';
@@ -26,6 +27,9 @@ const menuRole = {
   admin: [
     { name: 'Dashboard', path: '/admin/dashboard', icon: LayoutDashboard },
     { name: 'Utilisateurs', path: '/admin/utilisateurs', icon: Users },
+    { name: 'Demandes de dépôt', path: '/admin/demandes', icon: FileText },
+    // { name: 'Archives Utilisateurs', path: '/admin/utilisateurs/archives', icon: Users },
+    // { name: 'Archives Références', path: '/admin/references/archives', icon: Package },
     { name: 'Références', path: '/admin/references', icon: Package },
     { name: 'Auteurs', path: '/admin/auteurs', icon: Package },
     { name: 'Catégories', path: '/admin/categories', icon: Package },
@@ -33,7 +37,7 @@ const menuRole = {
   ],
   responsable_demande: [
     { name: 'Dashboard', path: '/responsable_demande/dashboard', icon: LayoutDashboard },
-    
+    { name: 'Demandes de dépôt', path: '/responsable_demande/demandes', icon: FileText },
   ],
   responsable_rh: [
     { name: 'Dashboard', path: '/responsable_rh/dashboard', icon: LayoutDashboard },

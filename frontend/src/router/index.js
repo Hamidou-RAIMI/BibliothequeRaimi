@@ -39,12 +39,22 @@ const router = createRouter({
           component: () => import('../views/admin/UtilisateursView.vue'),
         },
         {
+          path: 'utilisateurs/archives',
+          name: 'admin-utilisateurs-archives',
+          component: () => import('../views/admin/UtilisateursArchivesView.vue'),
+        },
+        {
           path: 'references',
           name: 'admin-references',
           component: () => import('../views/admin/ReferencesView.vue'),
         },
         {
-          path: 'auteur',
+          path: 'references/archives',
+          name: 'admin-references-archives',
+          component: () => import('../views/admin/ReferencesArchivesView.vue'),
+        },
+        {
+          path: 'auteurs',
           name: 'admin-authors',
           component: () => import('../views/admin/AuthorsView.vue'),
         },
@@ -57,6 +67,11 @@ const router = createRouter({
           path: 'editeurs',
           name: 'admin-publishers',
         component: () => import('../views/admin/PublishersView.vue'),
+        },
+        {
+          path: 'demandes',
+          name: 'admin-deposite-requests',
+        component: () => import('../views/admin/DepositeRequestsView.vue'),
         }
       ] 
     },
@@ -70,6 +85,11 @@ const router = createRouter({
           path: 'dashboard',
           name: 'responsable_demande-dashboard',
           component: () => import('../views/responsable_Demande/DashboardView.vue'),
+        },
+        {
+          path: 'demandes',
+          name: 'responsable_demande-deposite-requests',
+          component: () => import('../views/responsable_demande/DepositeRequestsView.vue'),
         }
       ] 
     },
@@ -87,7 +107,7 @@ const router = createRouter({
         {
           path: 'utilisateurs',
           name: 'responsable_rh-utilisateurs',
-          component: () => import('../views/responsable_Rh/UtilisateursView.vue'),
+          component: () => import('../views/admin/UtilisateursView.vue'),
         },
       ] 
     },

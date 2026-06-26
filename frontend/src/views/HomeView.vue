@@ -1,77 +1,57 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import Header from '@/components/layout/Header.vue'
+import { useCategoryStore } from '@/stores/category'
+import { useReferenceStore } from '@/stores/reference'
+import client from '@/api/client'
+// import Header from '@/components/layout/Header.vue'
 // import Footer from '@/components/layout/Footer.vue'
 
 const router = useRouter()
+const categoryStore = useCategoryStore()
+const referenceStore = useReferenceStore()
+const apiUrl = import.meta.env.VITE_API_URL
 
-const books = ref([
-  {
-    id: 1,
-    title: 'How Innovation Works',
-    author: 'Matt Ridley',
-    rating: 4.9,
-    reviews: 128,
-    image: 'https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=book%20cover%20how%20innovation%20works%20yellow%20design&image_size=square_hd'
-  },
-  {
-    id: 2,
-    title: "L'avenir de l'intelligence",
-    author: 'Pierre Lévy',
-    rating: 4.7,
-    reviews: 89,
-    image: 'https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=book%20cover%20artificial%20intelligence%20blue%20design&image_size=square_hd'
-  },
-  {
-    id: 3,
-    title: "Histoire de l'éducation",
-    author: 'Louise Després',
-    rating: 4.8,
-    reviews: 76,
-    image: 'https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=book%20cover%20education%20history%20sunset%20landscape&image_size=square_hd'
-  },
-  {
-    id: 4,
-    title: 'Philosophie de l’histoire',
-    author: 'Michel Serres',
-    rating: 4.6,
-    reviews: 54,
-    image: 'https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=book%20cover%20philosophy%20portrait%20man%20smiling&image_size=square_hd'
-  },
-  {
-    id: 5,
-    title: 'Biologie et cognitive',
-    author: 'Françoise Gilot',
-    rating: 4.9,
-    reviews: 112,
-    image: 'https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=book%20cover%20biology%20brain%20anatomy%20art&image_size=square_hd'
-  },
-  {
-    id: 6,
-    title: 'Design thinking',
-    author: 'Tim Brown',
-    rating: 4.5,
-    reviews: 203,
-    image: 'https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=book%20cover%20design%20thinking%20red%20notebook&image_size=square_hd'
-  },
-  {
-    id: 7,
-    title: 'Architecture et futures',
-    author: 'Yona Friedman',
-    rating: 4.8,
-    reviews: 67,
-    image: 'https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=book%20cover%20architecture%20city%20night%20lights&image_size=square_hd'
-  },
-  {
-    id: 8,
-    title: 'La santé de demain',
-    author: 'Didier Raoult',
-    rating: 4.7,
-    reviews: 145,
-    image: 'https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=book%20cover%20healthcare%20doctor%20phone&image_size=square_hd'
+const selectedCategory = ref(null)
+const searchQuery = ref('')
+
+const filteredReferences = computed(() => {
+  let refs = referenceStore.references
+  
+  // Filtrer par catégorie
+  if (selectedCategory.value) {
+    refs = refs.filter(ref => ref.category_id === selectedCategory.value)
   }
-])
+  
+  // Filtrer par recherche
+  if (searchQuery.value) {
+    const query = searchQuery.value.toLowerCase()
+    refs = refs.filter(ref => 
+      ref.title.toLowerCase().includes(query) ||
+      (ref.subtitle && ref.subtitle.toLowerCase().includes(query)) ||
+      (ref.isbn && ref.isbn.includes(query))
+    )
+  }
+  
+  return refs
+})
+
+const loadPublicData = async () => {
+  try {
+    const [categoriesRes, referencesRes] = await Promise.all([
+      client.get('/public/categories'),
+      client.get('/public/references'),
+    ])
+    categoryStore.categories = categoriesRes.data.data
+    referenceStore.references = referencesRes.data.data
+  } catch (err) {
+    console.error('Erreur lors du chargement:', err)
+  }
+}
+
+onMounted(() => {
+  loadPublicData()
+})
 
 const handleClick = () => {
   router.push('/login')
@@ -80,7 +60,6 @@ const handleClick = () => {
 
 <template>
   <div class="min-h-screen bg-stone-100">
-    <Header />
 
     <!-- Hero Section -->
     <section class="bg-gradient-to-br from-stone-800 to-stone-900 text-white">
@@ -131,27 +110,63 @@ const handleClick = () => {
           <button @click="handleClick" class="text-amber-700 font-semibold hover:underline">Voir tout →</button>
         </div>
         
+        <!-- Search Bar -->
+        <div class="mb-10">
+          <div class="relative max-w-6xl">
+            <input
+              v-model="searchQuery"
+              type="text"
+              placeholder="Rechercher une référence par titre, sous-titre ou ISBN..."
+              class="w-full px-6 py-4 rounded-full border border-gray-300 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition"
+            />
+            <svg class="absolute right-4 top-1/2 -translate-y-1/2 w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+            </svg>
+          </div>
+        </div>
+        
         <!-- Categories -->
         <div class="flex gap-3 mb-10 flex-wrap">
-          <span class="bg-amber-700 text-white px-4 py-2 rounded-full text-sm">Toute la bibliothèque</span>
-          <span class="bg-white text-stone-700 px-4 py-2 rounded-full text-sm border">Littérature</span>
-          <span class="bg-white text-stone-700 px-4 py-2 rounded-full text-sm border">Sciences</span>
-          <span class="bg-white text-stone-700 px-4 py-2 rounded-full text-sm border">Histoire</span>
-          <span class="bg-white text-stone-700 px-4 py-2 rounded-full text-sm border">Art & Architecture</span>
-          <span class="bg-white text-stone-700 px-4 py-2 rounded-full text-sm border">Philosophie</span>
+          <span
+            @click="selectedCategory = null"
+            :class="selectedCategory === null ? 'bg-amber-700 text-white' : 'bg-white text-stone-700 border'"
+            class="px-4 py-2 rounded-full text-sm cursor-pointer hover:opacity-80 transition"
+          >
+            Toute la bibliothèque
+          </span>
+          <span
+            v-for="category in categoryStore.categories"
+            :key="category.id"
+            @click="selectedCategory = category.id"
+            :class="selectedCategory === category.id ? 'bg-amber-700 text-white' : 'bg-white text-stone-700 border'"
+            class="px-4 py-2 rounded-full text-sm cursor-pointer hover:opacity-80 transition"
+          >
+            {{ category.name }}
+          </span>
         </div>
 
         <!-- Books Grid -->
         <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">
-          <div v-for="book in books" :key="book.id" @click="handleClick" class="bg-white rounded-xl overflow-hidden shadow hover:shadow-lg transition cursor-pointer">
-            <img :src="book.image" :alt="book.title" class="w-full h-64 object-cover" />
+          <div
+            v-for="reference in filteredReferences"
+            :key="reference.id"
+            @click="handleClick"
+            class="bg-white rounded-xl overflow-hidden shadow hover:shadow-lg transition cursor-pointer"
+          >
+            <img
+              :src="reference.cover_image_url ? reference.cover_image_url : 'https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=book%20cover%20placeholder&image_size=square_hd'"
+              :alt="reference.title"
+              class="w-full h-64 object-cover"
+            />
             <div class="p-4">
-              <h3 class="font-semibold text-stone-800 mb-1">{{ book.title }}</h3>
-              <p class="text-stone-500 text-sm mb-2">{{ book.author }}</p>
+              <h3 class="font-semibold text-stone-800 mb-1">{{ reference.title }}</h3>
+              <p class="text-stone-500 text-sm mb-2">
+                {{ reference.authors && reference.authors.length > 0 ? `${reference.authors[0].first_name} ${reference.authors[0].last_name}` : 'Auteur inconnu' }}
+              </p>
               <div class="flex items-center gap-1 text-amber-500 text-sm">
                 <i class="pi pi-star-fill"></i>
-                <span>{{ book.rating }}</span>
-                <span class="text-stone-400">({{ book.reviews }})</span>
+                <span>4.5</span>
+                <span class="text-stone-400">(0)</span>
               </div>
             </div>
           </div>
@@ -168,7 +183,7 @@ const handleClick = () => {
         </p>
         <div class="flex justify-center gap-4">
           <button @click="handleClick" class="bg-white text-teal-900 px-6 py-3 rounded-lg hover:bg-teal-50 transition font-semibold">
-            Déposer une œuvre
+            Ajouter une référence
           </button>
           <button @click="handleClick" class="border border-white text-white px-6 py-3 rounded-lg hover:bg-white hover:text-teal-900 transition">
             En savoir plus
@@ -177,6 +192,6 @@ const handleClick = () => {
       </div>
     </section>
 
-    <!-- <Footer /> -->
+   
   </div>
 </template>

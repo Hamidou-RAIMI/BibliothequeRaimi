@@ -13,10 +13,10 @@ onMounted(async () => {
   }
 })
 
-const handleLogout = async () => {
-  await authStore.logout()
-  router.push('/login')
-}
+// const handleLogout = async () => {
+//   await authStore.logout()
+//   router.push('/login')
+// }
 </script>
 
 <template>
@@ -68,14 +68,14 @@ const handleLogout = async () => {
         </div>
 
         <!-- Logout Button -->
-        <div class="flex justify-end">
+        <!-- <div class="flex justify-end">
           <button 
             @click="handleLogout"
             class="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-6 rounded-lg transition"
           >
             Déconnexion
           </button>
-        </div>
+        </div> -->
       </div>
       <!-- Not Authenticated -->
       <div v-else class="bg-yellow-50 border-2 border-yellow-200 rounded-lg p-8 text-center">

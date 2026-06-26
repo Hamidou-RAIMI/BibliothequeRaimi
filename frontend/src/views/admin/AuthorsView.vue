@@ -159,7 +159,7 @@ const handleDelete = async () => {
     
     <!-- Titre de la page -->
     <h1 class="text-3xl font-bold text-gray-800 mb-8">
-      <i class="pi pi-user mr-3 text-purple-700"></i>
+      <i class="pi pi-user mr-3 text-amber-700"></i>
       Gestion des Auteurs
     </h1>
 
@@ -179,7 +179,7 @@ const handleDelete = async () => {
               v-model="searchQuery"
               type="text"
               placeholder="Rechercher par nom..."
-              class="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition"
+              class="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition"
             />
           </div>
         </div>
@@ -190,7 +190,7 @@ const handleDelete = async () => {
     <div class="mb-6">
       <button
         @click="openModal('create')"
-        class="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg font-semibold flex items-center gap-2 transition"
+        class="bg-amber-600 hover:bg-amber-700 text-white px-6 py-3 rounded-lg font-semibold flex items-center gap-2 transition"
       >
         <i class="pi pi-plus"></i>
         Ajouter un auteur
@@ -278,7 +278,7 @@ const handleDelete = async () => {
                 v-model="formData.first_name"
                 type="text"
                 required
-                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition"
+                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition"
               />
             </div>
             <!-- Champ nom -->
@@ -288,7 +288,7 @@ const handleDelete = async () => {
                 v-model="formData.last_name"
                 type="text"
                 required
-                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition"
+                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition"
               />
             </div>
             <!-- Champ nationalité -->
@@ -297,7 +297,7 @@ const handleDelete = async () => {
               <input
                 v-model="formData.nationality"
                 type="text"
-                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition"
+                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition"
               />
             </div>
             <!-- Champ date de naissance -->
@@ -306,7 +306,7 @@ const handleDelete = async () => {
               <input
                 v-model="formData.birth_date"
                 type="date"
-                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition"
+                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition"
               />
             </div>
             <!-- Champ date de décès -->
@@ -315,7 +315,7 @@ const handleDelete = async () => {
               <input
                 v-model="formData.death_date"
                 type="date"
-                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition"
+                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition"
               />
             </div>
           </div>
@@ -325,7 +325,7 @@ const handleDelete = async () => {
             <textarea
               v-model="formData.biography"
               rows="4"
-              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition"
+              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition"
             ></textarea>
           </div>
           <!-- Boutons Annuler et Valider -->
@@ -340,7 +340,7 @@ const handleDelete = async () => {
             <button
               type="submit"
               :disabled="authorStore.loading"
-              class="flex-1 px-6 py-3 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white font-semibold rounded-lg transition flex items-center justify-center gap-2"
+              class="flex-1 px-6 py-3 bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white font-semibold rounded-lg transition flex items-center justify-center gap-2"
             >
               <i v-if="authorStore.loading" class="pi pi-spin pi-spinner"></i>
               {{ modalMode === 'create' ? 'Créer' : 'Modifier' }}

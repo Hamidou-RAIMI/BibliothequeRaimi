@@ -1,8 +1,10 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { useAuthStore } from '@/stores/auth'
 import { Toast } from 'primevue'
+import Paginator  from 'primevue/paginator'
 import { useToast } from 'primevue/usetoast'
 
 // ========================================================================
@@ -10,7 +12,7 @@ import { useToast } from 'primevue/usetoast'
 // ========================================================================
 const userStore = useUserStore()
 const toast = useToast()
-
+const router = useRouter()
 
 
 
@@ -37,6 +39,14 @@ const formData = ref({
   role: 'user',
   status: 'active',
 })
+
+const goToArchives = () => {
+  router.push('/admin/utilisateurs/archives')
+}
+
+const onPageChange = (event) => {
+  userStore.fetchUsers(event.page + 1)
+}
 
 // ========================================================================
 // PROPRIÉTÉ COMPUTÉE : FILTRER LES UTILISATEURS
@@ -191,26 +201,31 @@ const toggleStatus = async (id) => {
   }
 }
 
-// Confirmer la suppression
+// Confirmer l'archivage
 const confirmDelete = (user) => {
   userToDelete.value = user
   showDeleteModal.value = true
 }
 
-// Exécuter la suppression
+// Exécuter l'archivage
 const handleDelete = async () => {
   if (userToDelete.value) {
     try {
-      await userStore.deleteUser(userToDelete.value.id)
+      await userStore.archiveUser(userToDelete.value.id)
       showDeleteModal.value = false
       userToDelete.value = null
-      toast.add({ severity: 'success', summary: 'Succès', detail: 'Utilisateur supprimé avec succès', life: 3000 })
+      toast.add({ severity: 'success', summary: 'Succès', detail: 'Utilisateur archivé avec succès', life: 3000 })
     } catch (err) {
-      console.error('Erreur lors de la suppression:', err)
+      console.error('Erreur lors de l\'archivage:', err)
       toast.add({ severity: 'error', summary: 'Erreur', detail: 'Erreur lors de l\'opération', life: 3000 })
     }
   }
+
+
+
+
 }
+
 </script>
 <template>
   <div class="p-6 max-w-8xl mx-auto">
@@ -275,13 +290,21 @@ const handleDelete = async () => {
     </div>
 
     <!-- BOUTON AJOUTER UN UTILISATEUR -->
-    <div class="mb-6">
+    <div class="mb-6 flex gap-4">
       <button
         @click="openModal('create')"
         class="bg-amber-600 hover:bg-amber-700 text-white px-6 py-3 rounded-lg font-semibold flex items-center gap-2 transition"
       >
         <i class="pi pi-plus"></i>
         Ajouter un utilisateur
+      </button>
+
+      <button
+        @click="goToArchives"
+        class="bg-orange-600 hover:bg-orange-700 text-white px-6 py-3 rounded-lg font-semibold flex items-center gap-2 transition"
+      >
+        <i class="pi pi-archive"></i>
+        Voir les archives
       </button>
     </div>
 
@@ -346,13 +369,13 @@ const handleDelete = async () => {
                   >
                     <i class="pi pi-pencil"></i>
                   </button>
-                  <!-- BOUTON SUPPRIMER -->
+                  <!-- BOUTON archiver -->
                   <button
                     @click="confirmDelete(user)"
                     class="p-2 text-red-600 hover:bg-red-100 rounded-lg transition"
-                    title="Supprimer"
+                    title="Archiver"
                   >
-                    <i class="pi pi-trash"></i>
+                    <i class="pi pi-inbox"></i>
                   </button>
                 </div>
               </td>
@@ -367,6 +390,17 @@ const handleDelete = async () => {
             </tr>
           </tbody>
         </table>
+      </div>
+      <div class="mt-6">
+       <Paginator
+          :first="(userStore.pagination.currentPage - 1) * userStore.pagination.perPage"
+          :rows="userStore.pagination.perPage"
+          :totalRecords="userStore.pagination.total"
+          :pageLinkSize="2"
+          @page="onPageChange"
+          class="flex justify-center"
+        />
+         
       </div>
     </div>
 
@@ -497,9 +531,9 @@ const handleDelete = async () => {
         <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
           <i class="pi pi-exclamation-triangle text-red-600 text-3xl"></i>
         </div>
-        <h3 class="text-xl font-bold text-gray-800 mb-2">Confirmer la suppression ?</h3>
+        <h3 class="text-xl font-bold text-gray-800 mb-2">Confirmer l'archivage ?</h3>
         <p class="text-gray-600 mb-6">
-          Êtes-vous sûr de vouloir supprimer <strong>{{ userToDelete?.first_name }} {{ userToDelete?.last_name }}</strong> ? Cette action est irréversible.
+          Êtes-vous sûr de vouloir archiver <strong>{{ userToDelete?.first_name }} {{ userToDelete?.last_name }}</strong> ?
         </p>
         <div class="flex gap-4">
           <button
@@ -513,12 +547,10 @@ const handleDelete = async () => {
             :disabled="userStore.loading"
             class="flex-1 px-6 py-3 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white font-semibold rounded-lg transition"
           >
-            Supprimer
+            Archiver
           </button>
         </div>
       </div>
     </div>
   </div>
 </template>
-
-

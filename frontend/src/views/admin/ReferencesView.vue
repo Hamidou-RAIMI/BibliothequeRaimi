@@ -1,19 +1,32 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { useReferenceStore } from '@/stores/reference'
 import { useAuthorStore } from '@/stores/author'
 import { usePublisherStore } from '@/stores/publisher'
+import { useCategoryStore } from '@/stores/category'
 import { Toast } from 'primevue'
 import { useToast } from 'primevue/usetoast'
 import client from '@/api/client'
+import { useAuthStore } from '@/stores/auth'
 
+const authStore = useAuthStore()
+const currentUserName = ref ('')
 // ========================================================================
 // INITIALISATION DES STORES ET SERVICES
 // ========================================================================
 const referenceStore = useReferenceStore()
 const authorStore = useAuthorStore()
 const publisherStore = usePublisherStore()
+const categoryStore = useCategoryStore()
 const toast = useToast()
+const apiUrl = import.meta.env.VITE_API_URL
+const router = useRouter()
+
+// Fonction pour aller à la page des archives
+const goToArchives = () => {
+  router.push('/admin/references/archives')
+}
 
 // ========================================================================
 // VARIABLES LOCALES
@@ -23,8 +36,11 @@ const modalMode = ref('create') // 'create' ou 'edit'
 const currentStep = ref(1) // 1: Auteur, 2: Éditeur, 3: Référence
 const showDeleteModal = ref(false)
 const referenceToDelete = ref(null)
+const showDetailModal = ref(false)
+const currentReference = ref(null)
+const lastSelectedAuthor = ref(null)
+const lastSelectedPublisher = ref(null)
 
-const categories = ref([])
 const users = ref([])
 
 // Selected author and publisher
@@ -49,10 +65,13 @@ const newPublisherForm = ref({
 const showCreateAuthor = ref(false)
 const showCreatePublisher = ref(false)
 
-// Recherche
 const searchQuery = ref('')
 const searchAuthorsQuery = ref('')
 const searchPublishersQuery = ref('')
+
+// Variables pour l'image de couverture
+const coverImageFile = ref(null)
+const coverImagePreview = ref('')
 
 // Données du formulaire de référence
 const formData = ref({
@@ -70,6 +89,7 @@ const formData = ref({
   file_path: '',
   pages: '',
   status: 'draft',
+  is_new: true,
 })
 
 // ========================================================================
@@ -107,7 +127,7 @@ onMounted(async () => {
       referenceStore.fetchReferences(),
       authorStore.fetchAuthors(),
       publisherStore.fetchPublishers(),
-      client.get('/categories').then(r => categories.value = r.data.data),
+      categoryStore.fetchCategories(),
       client.get('/users').then(r => users.value = r.data.data),
     ])
   } catch (err) {
@@ -122,13 +142,13 @@ onMounted(async () => {
 const openModal = (mode, reference = null) => {
   modalMode.value = mode
   currentStep.value = 1
-  selectedAuthor.value = null
-  selectedPublisher.value = null
   showCreateAuthor.value = false
   showCreatePublisher.value = false
   
   if (mode === 'edit' && reference) {
     currentStep.value = 3
+    
+    
     formData.value = {
       id: reference.id,
       title: reference.title,
@@ -140,19 +160,74 @@ const openModal = (mode, reference = null) => {
       document_type: reference.document_type,
       category_id: reference.category_id || '',
       publisher_id: reference.publisher_id || '',
-      uploaded_by: reference.uploaded_by || '',
+      uploaded_by: (typeof reference.uploaded_by === 'object' && reference.uploaded_by !== null) ? reference.uploaded_by.id : (reference.uploaded_by || ''),
       cover_image: reference.cover_image || '',
       file_path: reference.file_path || '',
       pages: reference.pages || '',
       status: reference.status,
+      is_new: reference.is_new || false,
     }
+
+    // currentusername
+    currentUserName.value = authStore.user 
+      ? `${authStore.user.first_name} ${authStore.user.last_name}` 
+      : ''
+
+    // Pré-sélectionner l'auteur si la référence en a
+    if (reference.authors && reference.authors.length > 0) {
+      selectedAuthor.value = authorStore.authors.find(a => a.id === reference.authors[0].id)
+    } else {
+      selectedAuthor.value = null
+    }
+    selectedPublisher.value = null
+    // Prévisualiser l'image existante
+    if (reference.cover_image_url) {
+      coverImagePreview.value = reference.cover_image_url
+    } else {
+      coverImagePreview.value = ''
+    }
+    coverImageFile.value = null
     if (reference.publisher_id) {
       selectedPublisher.value = publisherStore.publishers.find(p => p.id === reference.publisher_id)
     }
   } else {
+    // En mode création, on pré-remplit avec les valeurs conservées
+formData.value.uploaded_by = authStore.user?.id || ''
+    currentUserName.value = authStore.user 
+      ? `${authStore.user.first_name} ${authStore.user.last_name}` 
+      : ''
+
+    selectedAuthor.value = lastSelectedAuthor.value
+    selectedPublisher.value = lastSelectedPublisher.value
+    resetCoverImage()
     resetForm()
   }
   isModalOpen.value = true
+}
+
+const openDetailModal = (reference) => {
+  currentReference.value = reference
+  showDetailModal.value = true
+}
+
+// Fonction pour gérer la sélection de l'image de couverture
+const handleCoverImageChange = (event) => {
+  const file = event.target.files[0]
+  if (file) {
+    coverImageFile.value = file
+    // Générer une prévisualisation
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      coverImagePreview.value = e.target.result
+    }
+    reader.readAsDataURL(file)
+  }
+}
+
+// Fonction pour réinitialiser l'image de couverture
+const resetCoverImage = () => {
+  coverImageFile.value = null
+  coverImagePreview.value = ''
 }
 
 const closeModal = () => {
@@ -172,6 +247,7 @@ const resetForm = () => {
     document_type: 'livre',
     category_id: '',
     publisher_id: '',
+    author_id: '',
     uploaded_by: '',
     cover_image: '',
     file_path: '',
@@ -210,7 +286,16 @@ const goToNextStep = async () => {
     toast.add({ severity: 'warn', summary: 'Attention', detail: 'Veuillez sélectionner un éditeur', life: 3000 })
     return
   }
-  
+  //******* */
+  if (currentStep.value === 2) {
+    if (selectedAuthor.value) {
+      formData.value.author_id = selectedAuthor.value.id
+    }
+    if (selectedPublisher.value) {
+      formData.value.publisher_id = selectedPublisher.value.id
+    }
+  }
+  //***//// */
   if (currentStep.value < 3) {
     currentStep.value++
   }
@@ -229,6 +314,7 @@ const createNewAuthor = async () => {
   try {
     const author = await authorStore.createAuthor(newAuthorForm.value)
     selectedAuthor.value = author
+    lastSelectedAuthor.value = author
     showCreateAuthor.value = false
     toast.add({ severity: 'success', summary: 'Succès', detail: 'Auteur créé avec succès', life: 3000 })
   } catch (err) {
@@ -241,6 +327,7 @@ const createNewPublisher = async () => {
   try {
     const publisher = await publisherStore.createPublisher(newPublisherForm.value)
     selectedPublisher.value = publisher
+    lastSelectedPublisher.value = publisher
     showCreatePublisher.value = false
     toast.add({ severity: 'success', summary: 'Succès', detail: 'Éditeur créé avec succès', life: 3000 })
   } catch (err) {
@@ -250,7 +337,7 @@ const createNewPublisher = async () => {
 }
 
 // ========================================================================
-// LABEL HELPERS
+// LABEL d'aide
 // ========================================================================
 const getDocumentTypeLabel = (type) => {
   const labels = {
@@ -298,14 +385,39 @@ const getStatusClass = (status) => {
 // ========================================================================
 const handleSubmit = async () => {
   try {
+    if (!formData.value.uploaded_by) {
+      formData.value.uploaded_by = authStore.user?.id
+    }
     if (selectedPublisher.value) {
       formData.value.publisher_id = selectedPublisher.value.id
     }
+    // Préparer les données à envoyer
+    const submitData = { ...formData.value }
+    
+    //  Retirer cover_image des données de base (on l'ajoute seulement si c'est un nouveau fichier)
+    delete submitData.cover_image
+    
+    // Ajouter l'image de couverture si elle existe
+    if (coverImageFile.value) {
+      submitData.cover_image = coverImageFile.value
+    }
+    
+    // Ajouter les auteurs sélectionnés
+    if (selectedAuthor.value) {
+      submitData.authors = [selectedAuthor.value]
+      lastSelectedAuthor.value = selectedAuthor.value
+    }
+    
+    // Sauvegarder le dernier éditeur sélectionné
+    if (selectedPublisher.value) {
+      lastSelectedPublisher.value = selectedPublisher.value
+    }
+
     if (modalMode.value === 'create') {
-      await referenceStore.createReference(formData.value)
+      await referenceStore.createReference(submitData)
       toast.add({ severity: 'success', summary: 'Succès', detail: 'Référence créée avec succès', life: 3000 })
     } else {
-      await referenceStore.updateReference(formData.value.id, formData.value)
+      await referenceStore.updateReference(formData.value.id, submitData)
       toast.add({ severity: 'success', summary: 'Succès', detail: 'Référence mise à jour avec succès', life: 3000 })
     }
     closeModal()
@@ -315,15 +427,15 @@ const handleSubmit = async () => {
   }
 }
 
-const toggleStatus = async (id) => {
-  try {
-    await referenceStore.toggleReferenceStatus(id)
-    toast.add({ severity: 'success', summary: 'Succès', detail: 'Statut mis à jour avec succès', life: 3000 })
-  } catch (err) {
-    console.error('Erreur lors du changement de statut:', err)
-    toast.add({ severity: 'error', summary: 'Erreur', detail: 'Erreur lors de l\'opération', life: 3000 })
-  }
-}
+// const toggleStatus = async (id) => {
+//   try {
+//     await referenceStore.toggleReferenceStatus(id)
+//     toast.add({ severity: 'success', summary: 'Succès', detail: 'Statut mis à jour avec succès', life: 3000 })
+//   } catch (err) {
+//     console.error('Erreur lors du changement de statut:', err)
+//     toast.add({ severity: 'error', summary: 'Erreur', detail: 'Erreur lors de l\'opération', life: 3000 })
+//   }
+// }
 
 const confirmDelete = (reference) => {
   referenceToDelete.value = reference
@@ -333,12 +445,12 @@ const confirmDelete = (reference) => {
 const handleDelete = async () => {
   if (referenceToDelete.value) {
     try {
-      await referenceStore.deleteReference(referenceToDelete.value.id)
+      await referenceStore.archiveReference(referenceToDelete.value.id)
       showDeleteModal.value = false
       referenceToDelete.value = null
-      toast.add({ severity: 'success', summary: 'Succès', detail: 'Référence supprimée avec succès', life: 3000 })
+      toast.add({ severity: 'success', summary: 'Succès', detail: 'Référence archivée avec succès', life: 3000 })
     } catch (err) {
-      console.error('Erreur lors de la suppression:', err)
+      console.error('Erreur lors de l\'archivage:', err)
       toast.add({ severity: 'error', summary: 'Erreur', detail: 'Erreur lors de l\'opération', life: 3000 })
     }
   }
@@ -377,14 +489,21 @@ const handleDelete = async () => {
       </div>
     </div>
 
-    <!-- BOUTON AJOUTER UNE RÉFÉRENCE -->
-    <div class="mb-6">
+    <!-- BOUTONS D'ACTION -->
+    <div class="mb-6 flex gap-4">
       <button
         @click="openModal('create')"
         class="bg-amber-600 hover:bg-amber-700 text-white px-6 py-3 rounded-lg font-semibold flex items-center gap-2 transition"
       >
         <i class="pi pi-plus"></i>
         Ajouter une référence
+      </button>
+      <button
+        @click="goToArchives"
+        class="bg-orange-600 hover:bg-orange-700 text-white px-6 py-3 rounded-lg font-semibold flex items-center gap-2 transition"
+      >
+        <i class="pi pi-archive"></i>
+        Voir les archives
       </button>
     </div>
 
@@ -394,6 +513,7 @@ const handleDelete = async () => {
         <table class="w-full">
           <thead class="bg-gray-50 border-b">
             <tr>
+              <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Couverture</th>
               <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Titre</th>
               <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Type</th>
               <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Langue</th>
@@ -405,7 +525,7 @@ const handleDelete = async () => {
           <tbody class="divide-y divide-gray-200">
             <!-- ÉTAT DE CHARGEMENT -->
             <tr v-if="referenceStore.loading">
-              <td colspan="6" class="px-6 py-12 text-center text-gray-500">
+              <td colspan="7" class="px-6 py-12 text-center text-gray-500">
                 <i class="pi pi-spin pi-spinner text-3xl mb-2"></i>
                 <p>Chargement des références...</p>
               </td>
@@ -414,8 +534,21 @@ const handleDelete = async () => {
             <!-- LISTE DES RÉFÉRENCES -->
             <tr v-else v-for="reference in filteredReferences" :key="reference.id" class="hover:bg-gray-50 transition">
               <td class="px-6 py-4">
+                <div v-if="reference.cover_image_url" class="w-16 h-20 overflow-hidden rounded-lg border border-gray-200">
+                  <img :src="reference.cover_image_url" :alt="reference.title" class="w-full h-full object-cover">
+                </div>
+                <div v-else class="w-16 h-20 bg-gray-100 rounded-lg border border-gray-200 flex items-center justify-center">
+                  <i class="pi pi-image text-gray-400 text-xl"></i>
+                </div>
+              </td>
+              <td class="px-6 py-4">
                 <div>
-                  <p class="font-semibold text-gray-800">{{ reference.title }}</p>
+                  <div class="flex items-center gap-2">
+                    <p class="font-semibold text-gray-800">{{ reference.title }}</p>
+                    <span v-if="reference.is_new" class="bg-green-100 text-green-800 px-2 py-0.5 rounded-full text-xs font-semibold">
+                      Nouveau
+                    </span>
+                  </div>
                   <p v-if="reference.subtitle" class="text-sm text-gray-500">{{ reference.subtitle }}</p>
                   <p v-if="reference.isbn" class="text-xs text-gray-400">{{ reference.isbn }}</p>
                 </div>
@@ -438,18 +571,18 @@ const handleDelete = async () => {
                     <i class="pi pi-pencil"></i>
                   </button>
                   <button
-                    @click="toggleStatus(reference.id)"
+                    @click="openDetailModal(reference)"
                     class="p-2 text-green-600 hover:bg-green-100 rounded-lg transition"
-                    title="Changer le statut"
+                    title="Voir les détails"
                   >
                     <i class="pi pi-eye"></i>
                   </button>
                   <button
                     @click="confirmDelete(reference)"
-                    class="p-2 text-red-600 hover:bg-red-100 rounded-lg transition"
-                    title="Supprimer"
+                    class="p-2 text-orange-600 hover:bg-orange-100 rounded-lg transition"
+                    title="Archiver"
                   >
-                    <i class="pi pi-trash"></i>
+                    <i class="pi pi-inbox"></i>
                   </button>
                 </div>
               </td>
@@ -457,7 +590,7 @@ const handleDelete = async () => {
 
             <!-- AUCUNE RÉFÉRENCE -->
             <tr v-if="!referenceStore.loading && filteredReferences.length === 0">
-              <td colspan="6" class="px-6 py-12 text-center text-gray-500">
+              <td colspan="7" class="px-6 py-12 text-center text-gray-500">
                 <i class="pi pi-inbox text-4xl mb-3"></i>
                 <p>Aucune référence trouvée</p>
               </td>
@@ -543,18 +676,19 @@ const handleDelete = async () => {
                 v-model="searchAuthorsQuery"
                 type="text"
                 placeholder="Rechercher un auteur par nom..."
-                class="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition"
+                class="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-purple-500 outline-none transition"
               />
             </div>
           </div>
+
 
           <!-- LISTE DES AUTEURS -->
           <div class="max-h-64 overflow-y-auto mb-6 border rounded-lg p-3">
             <div
               v-for="author in filteredAuthors"
               :key="author.id"
-              @click="selectedAuthor = author"
-              :class="selectedAuthor?.id === author.id ? 'border-purple-500 bg-purple-50' : 'border-gray-200 hover:border-gray-300'"
+              @click="selectedAuthor = author; lastSelectedAuthor = author"
+              :class="selectedAuthor?.id === author.id ? 'border-amber-500 bg-purple-50' : 'border-gray-200 hover:border-gray-300'"
               class="p-4 border rounded-lg mb-3 cursor-pointer transition"
             >
               <div class="font-semibold text-gray-800">
@@ -574,6 +708,11 @@ const handleDelete = async () => {
             <i class="pi pi-plus"></i>
             {{ showCreateAuthor ? 'Annuler' : 'Créer un nouvel auteur' }}
           </button>
+
+
+
+
+
 
           <!-- FORMULAIRE CRÉATION AUTEUR -->
           <div v-if="showCreateAuthor" class="border-t pt-4 space-y-4">
@@ -638,6 +777,10 @@ const handleDelete = async () => {
           </div>
         </div>
 
+
+
+
+
         <!-- ÉTAPE 2: SÉLECTION/CRÉATION D'ÉDITEUR -->
         <div v-if="currentStep === 2 && modalMode === 'create'">
           <h2 class="text-2xl font-bold text-gray-800 mb-6">
@@ -663,8 +806,8 @@ const handleDelete = async () => {
             <div
               v-for="publisher in filteredPublishers"
               :key="publisher.id"
-              @click="selectedPublisher = publisher"
-              :class="selectedPublisher?.id === publisher.id ? 'border-purple-500 bg-purple-50' : 'border-gray-200 hover:border-gray-300'"
+              @click="selectedPublisher = publisher; lastSelectedPublisher = publisher"
+              :class="selectedPublisher?.id === publisher.id ? 'border-amber-500 bg-purple-50' : 'border-gray-200 hover:border-gray-300'"
               class="p-4 border rounded-lg mb-3 cursor-pointer transition"
             >
               <div class="font-semibold text-gray-800">{{ publisher.name }}</div>
@@ -727,6 +870,12 @@ const handleDelete = async () => {
           </div>
         </div>
 
+
+
+
+
+
+
         <!-- ÉTAPE 3: FORMULAIRE DE RÉFÉRENCE -->
         <div v-if="currentStep === 3">
           <h2 class="text-2xl font-bold text-gray-800 mb-6">
@@ -741,7 +890,7 @@ const handleDelete = async () => {
                   v-model="formData.title"
                   type="text"
                   required
-                  class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition"
+                  class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition"
                 />
               </div>
               <div class="md:col-span-2">
@@ -749,8 +898,32 @@ const handleDelete = async () => {
                 <input
                   v-model="formData.subtitle"
                   type="text"
-                  class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition"
+                  class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition"
                 />
+              </div>
+              <div class="md:col-span-2">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Image de couverture</label>
+                <input
+                  @change="handleCoverImageChange"
+                  type="file"
+                  accept="image/*"
+                  class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition"
+                />
+                <!-- Prévisualisation de l'image -->
+                <div v-if="coverImagePreview" class="mt-4">
+                  <img
+                    :src="coverImagePreview"
+                    alt="Prévisualisation"
+                    class="max-w-xs max-h-48 object-cover rounded-lg border border-gray-200"
+                  />
+                  <button
+                    @click="resetCoverImage"
+                    type="button"
+                    class="mt-2 text-sm text-red-600 hover:text-red-800 font-medium"
+                  >
+                    Supprimer l'image
+                  </button>
+                </div>
               </div>
               <div class="md:col-span-2">
                 <label class="block text-sm font-medium text-gray-700 mb-2">Résumé</label>
@@ -812,8 +985,18 @@ const handleDelete = async () => {
                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition bg-white"
                 >
                   <option value="">-- Choisir une catégorie --</option>
-                  <option v-for="cat in categories" :key="cat.id" :value="cat.id">{{ cat.name || cat.nom || `Catégorie ${cat.id}` }}</option>
+                  <option v-for="cat in categoryStore.categories" :key="cat.id" :value="cat.id">{{ cat.name || cat.nom || `Catégorie ${cat.id}` }}</option>
                 </select>
+              </div>
+              <div>
+                 <label class="block text-sm font-medium text-gray-700 mb-2">Auteur</label>
+                       <select
+                         v-model="formData.author_id"
+                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition bg-white"
+                        >
+                           <option value="">-- Choisir un auteur --</option>
+                            <option v-for="author in authorStore.authors" :key="author.id" :value="author.id">{{ author.first_name }} {{ author.last_name }}</option>
+                   </select>
               </div>
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">Éditeur</label>
@@ -827,13 +1010,11 @@ const handleDelete = async () => {
               </div>
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">Ajouté par</label>
-                <select
-                  v-model="formData.uploaded_by"
-                  class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition bg-white"
-                >
-                  <option value="">-- Choisir un utilisateur --</option>
-                  <option v-for="user in users" :key="user.id" :value="user.id">{{ user.first_name }} {{ user.last_name }}</option>
-                </select>
+                <div>
+                   <div class="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-700">
+                       {{ currentUserName }}
+                   </div>
+              </div>
               </div>
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">Statut *</label>
@@ -846,6 +1027,15 @@ const handleDelete = async () => {
                   <option value="published">Publié</option>
                   <option value="archived">Archivé</option>
                 </select>
+              </div>
+              <div class="flex items-center gap-2">
+                <input
+                  v-model="formData.is_new"
+                  type="checkbox"
+                  id="is_new"
+                  class="w-4 h-4 text-amber-600 focus:ring-amber-500 border-gray-300 rounded"
+                />
+                <label for="is_new" class="text-sm font-medium text-gray-700">Marquer comme nouveau</label>
               </div>
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">Pages</label>
@@ -905,7 +1095,7 @@ const handleDelete = async () => {
         <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
           <i class="pi pi-exclamation-triangle text-red-600 text-3xl"></i>
         </div>
-        <h3 class="text-xl font-bold text-gray-800 mb-2">Confirmer la suppression ?</h3>
+        <h3 class="text-xl font-bold text-gray-800 mb-2">Confirmer ?</h3>
         <p class="text-gray-600 mb-6">
           Êtes-vous sûr de vouloir supprimer <strong>{{ referenceToDelete?.title }}</strong> ? Cette action est irréversible.
         </p>
@@ -921,8 +1111,96 @@ const handleDelete = async () => {
             :disabled="referenceStore.loading"
             class="flex-1 px-6 py-3 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white font-semibold rounded-lg transition"
           >
-            Supprimer
+            Archiver
           </button>
+        </div>
+      </div>
+    </div>
+    <div v-if="showDetailModal" class="fixed inset-0 z-50 flex items-center justify-center">
+      <div @click="showDetailModal = false" class="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
+      <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl mx-4 p-8 max-h-[90vh] overflow-y-auto">
+        <div class="flex justify-between items-center mb-6">
+          <h2 class="text-2xl font-bold text-gray-800">Détails de la Référence</h2>
+          <button @click="showDetailModal = false" class="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition">
+            <i class="pi pi-times text-xl"></i>
+          </button>
+        </div>
+
+        <div class="space-y-4" v-if="currentReference">
+          <!-- Image de couverture -->
+          <div v-if="currentReference.cover_image_url" class="flex justify-center mb-4">
+            <img :src="currentReference.cover_image_url" :alt="currentReference.title" class="max-w-xs max-h-64 object-cover rounded-xl shadow-md border border-gray-200">
+          </div>
+          
+          <!-- Titre & Sous-titre -->
+          <div class="border-b pb-4">
+            <h3 class="text-xl font-semibold text-gray-800">{{ currentReference.title }}</h3>
+            <p v-if="currentReference.subtitle" class="text-gray-600 mt-1">{{ currentReference.subtitle }}</p>
+          </div>
+
+          <!-- Informations de base -->
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <span class="text-sm font-medium text-gray-500">Type de document</span>
+              <p class="text-gray-800">{{ getDocumentTypeLabel(currentReference.document_type) }}</p>
+            </div>
+            <div>
+              <span class="text-sm font-medium text-gray-500">Langue</span>
+              <p class="text-gray-800">{{ getLanguageLabel(currentReference.language) }}</p>
+            </div>
+            <div v-if="currentReference.publication_year">
+              <span class="text-sm font-medium text-gray-500">Année de publication</span>
+              <p class="text-gray-800">{{ currentReference.publication_year }}</p>
+            </div>
+            <div v-if="currentReference.isbn">
+              <span class="text-sm font-medium text-gray-500">ISBN</span>
+              <p class="text-gray-800">{{ currentReference.isbn }}</p>
+            </div>
+            <div v-if="currentReference.pages">
+              <span class="text-sm font-medium text-gray-500">Nombre de pages</span>
+              <p class="text-gray-800">{{ currentReference.pages }}</p>
+            </div>
+            <div>
+              <span class="text-sm font-medium text-gray-500">Statut</span>
+              <p>
+                <span :class="getStatusClass(currentReference.status)" class="px-3 py-1 rounded-full text-xs font-semibold">
+                  {{ getStatusLabel(currentReference.status) }}
+                </span>
+              </p>
+            </div>
+          </div>
+
+          <!-- Éditeur -->
+          <div v-if="publisherStore.publishers.find(p => p.id === currentReference.publisher_id)">
+            <span class="text-sm font-medium text-gray-500">Éditeur</span>
+            <p class="text-gray-800">{{ publisherStore.publishers.find(p => p.id === currentReference.publisher_id)?.name }}</p>
+          </div>
+
+          <!-- Catégorie -->
+          <div v-if="categoryStore.categories.find(c => c.id === currentReference.category_id)">
+            <span class="text-sm font-medium text-gray-500">Catégorie</span>
+            <p class="text-gray-800">{{ categoryStore.categories.find(c => c.id === currentReference.category_id)?.name || categoryStore.categories.find(c => c.id === currentReference.category_id)?.nom || '-' }}</p>
+          </div>
+
+          <!-- Ajouté par -->
+          <div v-if="currentReference.uploadedBy">
+            <span class="text-sm font-medium text-gray-500">Ajouté par</span>
+            <p class="text-gray-800">{{ currentReference.uploadedBy.first_name }} {{ currentReference.uploadedBy.last_name }}</p>
+          </div>
+
+          <!-- Résumé -->
+          <div v-if="currentReference.abstract">
+            <span class="text-sm font-medium text-gray-500">Résumé</span>
+            <p class="text-gray-800 mt-1">{{ currentReference.abstract }}</p>
+          </div>
+
+          <!-- Liens -->
+          <div class="flex gap-4 pt-4">
+            <!-- <button @click="showDetailModal = false; openModal('edit', currentReference)" class="flex items-center gap-2 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg transition">
+              <i class="pi pi-pencil"></i>
+              Modifier
+            </button> -->
+          </div>
         </div>
       </div>
     </div>

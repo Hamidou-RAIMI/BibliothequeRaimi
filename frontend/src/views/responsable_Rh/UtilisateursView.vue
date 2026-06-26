@@ -3,6 +3,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useUserStore } from '@/stores/user'
 import { useAuthStore } from '@/stores/auth'
 import { Toast } from 'primevue'
+import { Paginator } from 'primevue/paginator'
 import { useToast } from 'primevue/usetoast'
 
 // ========================================================================
@@ -37,6 +38,10 @@ const formData = ref({
   role: 'user',
   status: 'active',
 })
+
+const onPageChange = (event) => {
+  userStore.fetchUsers(event.page + 1)
+}
 
 // ========================================================================
 // PROPRIÉTÉ COMPUTÉE : FILTRER LES UTILISATEURS
@@ -201,10 +206,10 @@ const confirmDelete = (user) => {
 const handleDelete = async () => {
   if (userToDelete.value) {
     try {
-      await userStore.deleteUser(userToDelete.value.id)
+      await userStore.archiveUser(userToDelete.value.id)
       showDeleteModal.value = false
       userToDelete.value = null
-      toast.add({ severity: 'success', summary: 'Succès', detail: 'Utilisateur supprimé avec succès', life: 3000 })
+      toast.add({ severity: 'success', summary: 'Succès', detail: 'Utilisateur archivé avec succès', life: 3000 })
     } catch (err) {
       console.error('Erreur lors de la suppression:', err)
       toast.add({ severity: 'error', summary: 'Erreur', detail: 'Erreur lors de l\'opération', life: 3000 })
@@ -350,9 +355,9 @@ const handleDelete = async () => {
                   <button
                     @click="confirmDelete(user)"
                     class="p-2 text-red-600 hover:bg-red-100 rounded-lg transition"
-                    title="Supprimer"
+                    title="Archiver"
                   >
-                    <i class="pi pi-trash"></i>
+                    <i class="pi pi-inbox"></i>
                   </button>
                 </div>
               </td>
@@ -367,6 +372,14 @@ const handleDelete = async () => {
             </tr>
           </tbody>
         </table>
+      </div>
+      <div class="mt-6">
+        <Paginator 
+          :first="(userStore.pagination.currentPage - 1) * userStore.pagination.perPage" 
+          :rows="userStore.pagination.perPage" 
+          :total-rows="userStore.pagination.total"
+          @page="onPageChange" 
+        />
       </div>
     </div>
 
@@ -497,9 +510,9 @@ const handleDelete = async () => {
         <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
           <i class="pi pi-exclamation-triangle text-red-600 text-3xl"></i>
         </div>
-        <h3 class="text-xl font-bold text-gray-800 mb-2">Confirmer la suppression ?</h3>
+        <h3 class="text-xl font-bold text-gray-800 mb-2">Confirmer l'archivage ?</h3>
         <p class="text-gray-600 mb-6">
-          Êtes-vous sûr de vouloir supprimer <strong>{{ userToDelete?.first_name }} {{ userToDelete?.last_name }}</strong> ? Cette action est irréversible.
+          Êtes-vous sûr de vouloir archiver <strong>{{ userToDelete?.first_name }} {{ userToDelete?.last_name }}</strong> ?
         </p>
         <div class="flex gap-4">
           <button
@@ -513,12 +526,10 @@ const handleDelete = async () => {
             :disabled="userStore.loading"
             class="flex-1 px-6 py-3 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white font-semibold rounded-lg transition"
           >
-            Supprimer
+            Archiver
           </button>
         </div>
       </div>
     </div>
   </div>
 </template>
-
-
