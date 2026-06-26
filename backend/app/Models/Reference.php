@@ -35,7 +35,23 @@ class Reference extends Model
         'download_count',
         'view_count',
         'status',
+        'is_new',
     ];
+
+    /**
+     * The accessors to append to the model's array form.
+     *
+     * @var list<string>
+     */
+    protected $appends = ['cover_image_url'];
+
+    /**
+     * Get the cover image URL.
+     */
+    public function getCoverImageUrlAttribute(): ?string
+    {
+        return $this->cover_image ? url('storage/' . $this->cover_image) : null;
+    }
 
     /**
      * Relation avec la catégorie (une référence appartient à une catégorie)

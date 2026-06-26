@@ -17,7 +17,7 @@ class CategorieSeeder extends Seeder
      */
     public function run(): void
     {
-        // Tableau des catégories à créer avec leur nom et description
+        // Tableau des catégories  avec leur nom et description
         $categories = [
             [
                 'name' => 'Informatique',
@@ -53,18 +53,24 @@ class CategorieSeeder extends Seeder
             ]
         ];
 
-        // Parcourt chaque catégorie et la crée dans la base de données
+        // Parcourt chaque catégorie et la crée dans la base de données si elle n'existe pas déjà
         foreach ($categories as $categorie) {
-            Categorie::create([
-                'name' => $categorie['name'],
-                'slug' => Str::slug($categorie['name']), // Génère un slug URL-friendly (ex: "informatique" pour "Informatique")
-                'description' => $categorie['description'],
-                'status' => 'active' // Toutes les catégories sont activées par défaut
-            ]);
+            Categorie::firstOrCreate(
+                ['name' => $categorie['name']],
+                [
+                    'slug' => Str::slug($categorie['name']), // Génère un slug URL-friendly (ex: "informatique" pour "Informatique")
+                    'description' => $categorie['description'],
+                    'status' => 'active' // Toutes les catégories sont activées par défaut
+                ]
+            );
         }
 
-        // Ajoute 5 catégories aléatoires supplémentaires avec le factory
-        // Cela donne encore plus de variété au catalogue
-        Categorie::factory(5)->create();
+        // Vérifie le nombre de catégories existantes avant d'ajouter les 5 aléatoires
+        $nbCategoriesExistantes = Categorie::count();
+        if ($nbCategoriesExistantes < 13) {
+            // Ajoute 5 catégories aléatoires supplémentaires avec le factory
+            // Cela donne encore plus de variété au catalogue
+            Categorie::factory(5)->create();
+        }
     }
 }

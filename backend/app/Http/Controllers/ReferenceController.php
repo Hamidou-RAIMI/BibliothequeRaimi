@@ -26,6 +26,22 @@ class ReferenceController extends Controller
 
     /**
      * =========================================================================
+     * MÉTHODE PUBLICINDEX : AFFICHER LA LISTE DES RÉFÉRENCES PUBLIQUES (PUBLIÉES)
+     * =========================================================================
+     */
+    public function publicIndex()
+    {
+        $references = Reference::with(['category', 'publisher', 'authors'])->where('status', 'published')->get();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Liste des références publiques récupérée avec succès',
+            'data' => $references
+        ], 200);
+    }
+
+    /**
+     * =========================================================================
      * MÉTHODE SHOW : AFFICHER UNE SEULE RÉFÉRENCE
      * =========================================================================
      */
@@ -65,10 +81,11 @@ class ReferenceController extends Controller
             'category_id' => 'nullable|exists:categories,id',
             'publisher_id' => 'nullable|exists:publishers,id',
             'uploaded_by' => 'nullable|exists:users,id',
-            'cover_image' => 'nullable|string|max:255',
+            'cover_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'file_path' => 'nullable|string|max:255',
             'pages' => 'nullable|integer',
-            'status' => 'required|in:draft,published,archived'
+            'status' => 'required|in:draft,published,archived',
+            'authors' => 'nullable|string'
         ]);
 
         if ($validator->fails()) {
@@ -79,12 +96,29 @@ class ReferenceController extends Controller
             ], 422);
         }
 
-        $reference = Reference::create($request->all());
+        $data = $request->except('cover_image', 'authors');
+
+        // Gestion du téléchargement de l'image de couverture
+        if ($request->hasFile('cover_image')) {
+            $imagePath = $request->file('cover_image')->store('covers', 'public');
+            $data['cover_image'] = $imagePath;
+        }
+
+        $reference = Reference::create($data);
+
+        // Gestion des auteurs associés
+        if ($request->has('authors')) {
+            $authors = json_decode($request->authors, true);
+            if (is_array($authors) && !empty($authors)) {
+                $authorIds = array_column($authors, 'id');
+                $reference->authors()->sync($authorIds);
+            }
+        }
 
         return response()->json([
             'success' => true,
             'message' => 'Référence créée avec succès !',
-            'data' => $reference
+            'data' => $reference->load(['category', 'publisher', 'uploadedBy', 'authors'])
         ], 201);
     }
 
@@ -115,10 +149,11 @@ class ReferenceController extends Controller
             'category_id' => 'nullable|exists:categories,id',
             'publisher_id' => 'nullable|exists:publishers,id',
             'uploaded_by' => 'nullable|exists:users,id',
-            'cover_image' => 'nullable|string|max:255',
+            'cover_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'file_path' => 'nullable|string|max:255',
             'pages' => 'nullable|integer',
-            'status' => 'sometimes|in:draft,published,archived'
+            'status' => 'sometimes|in:draft,published,archived',
+            'authors' => 'nullable|string'
         ]);
 
         if ($validator->fails()) {
@@ -129,21 +164,44 @@ class ReferenceController extends Controller
             ], 422);
         }
 
-        $reference->update($request->all());
+        $data = $request->except('cover_image', 'authors');
+
+        // Gestion du téléchargement de l'image de couverture pour la mise à jour
+        if ($request->hasFile('cover_image')) {
+            // Supprimer l'ancienne image si elle existe
+            if ($reference->cover_image && \Storage::disk('public')->exists($reference->cover_image)) {
+                \Storage::disk('public')->delete($reference->cover_image);
+            }
+            $imagePath = $request->file('cover_image')->store('covers', 'public');
+            $data['cover_image'] = $imagePath;
+        }
+
+        $reference->update($data);
+
+        // Gestion des auteurs associés
+        if ($request->has('authors')) {
+            $authors = json_decode($request->authors, true);
+            if (is_array($authors) && !empty($authors)) {
+                $authorIds = array_column($authors, 'id');
+                $reference->authors()->sync($authorIds);
+            } else {
+                $reference->authors()->sync([]);
+            }
+        }
 
         return response()->json([
             'success' => true,
             'message' => 'Référence mise à jour avec succès !',
-            'data' => $reference
+            'data' => $reference->load(['category', 'publisher', 'uploadedBy', 'authors'])
         ], 200);
     }
 
     /**
      * =========================================================================
-     * MÉTHODE DESTROY : SUPPRIMER UNE RÉFÉRENCE
+     * MÉTHODE ARCHIVE : ARCHIVER UNE RÉFÉRENCE
      * =========================================================================
      */
-    public function destroy($id)
+    public function archive($id)
     {
         $reference = Reference::find($id);
 
@@ -154,11 +212,53 @@ class ReferenceController extends Controller
             ], 404);
         }
 
-        $reference->delete();
+        $reference->status = 'archived';
+        $reference->save();
 
         return response()->json([
             'success' => true,
-            'message' => 'Référence supprimée avec succès !'
+            'message' => 'Référence archivée avec succès !'
+        ], 200);
+    }
+
+    /**
+     * =========================================================================
+     * MÉTHODE RESTORE : RÉSTAUER UNE RÉFÉRENCE ARCHIVÉE
+     * =========================================================================
+     */
+    public function restore($id)
+    {
+        $reference = Reference::find($id);
+
+        if (!$reference) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Référence non trouvée'
+            ], 404);
+        }
+
+        $reference->status = 'draft';
+        $reference->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Référence restaurée avec succès !'
+        ], 200);
+    }
+
+    /**
+     * =========================================================================
+     * MÉTHODE ARCHIVED : AFFICHER LA LISTE DES RÉFÉRENCES ARCHIVÉES
+     * =========================================================================
+     */
+    public function archived()
+    {
+        $references = Reference::with(['category', 'publisher', 'uploadedBy', 'authors'])->where('status', 'archived')->get();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Liste des références archivées récupérée avec succès',
+            'data' => $references
         ], 200);
     }
 

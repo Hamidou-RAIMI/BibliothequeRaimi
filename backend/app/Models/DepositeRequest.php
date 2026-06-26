@@ -20,6 +20,15 @@ class DepositeRequest extends Model
         'applicant_id',
         'assigned_manager_id',
         'title',
+        'subtitle',
+        'abstract',
+        'isbn',
+        'publication_year',
+        'language',
+        'document_type',
+        'category_id',
+        'publisher_id',
+        'pages',
         'description',
         'proposed_file',
         'status',
@@ -47,5 +56,21 @@ class DepositeRequest extends Model
     public function reviews(): HasMany
     {
         return $this->hasMany(DepositeRequestReview::class, 'deposite_requests_id');
+    }
+
+    /**
+     * Relation avec la catégorie
+     */
+    public function category(): BelongsTo
+    {
+        return $this->belongsTo(Categorie::class);
+    }
+
+    /**
+     * Relation avec l'éditeur
+     */
+    public function publisher(): BelongsTo
+    {
+        return $this->belongsTo(Publisher::class);
     }
 }

@@ -9,4 +9,11 @@ class Categorie extends Model
 {
     /** @use HasFactory<\Database\Factories\CategorieFactory> */
     use HasFactory;
+
+    protected $fillable = [
+        'name',
+        'slug',
+        'description',
+        'status',
+    ];
 }

@@ -26,6 +26,9 @@ class ReferenceSeeder extends Seeder
         $users = User::all();
         $authors = Author::all();
 
+        // if ($categories->isEmpty()) {
+        //     throw new \Exception('Aucune catégorie trouvée. Exécute CategorieSeeder d\'abord.');
+        //     }
         // Si pas assez d'éléments, on utilise le factory pour en créer
         if ($categories->isEmpty()) $categories = Categorie::factory(5)->create();
         if ($publishers->isEmpty()) $publishers = Publisher::factory(5)->create();
