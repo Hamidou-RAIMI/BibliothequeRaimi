@@ -24,6 +24,21 @@ export const useDepositeRequestStore = defineStore('depositeRequest', () => {
     }
   }
 
+  const fetchMyDepositeRequests = async () => {
+    loading.value = true
+    error.value = null
+    try {
+      const response = await client.get('/my-deposite-requests')
+      depositeRequests.value = response.data.data
+    } catch (err) {
+      error.value = err.response?.data?.message || 'Erreur lors du chargement de vos demandes'
+      console.error(err)
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
   const fetchManagers = async () => {
     loading.value = true
     error.value = null
@@ -206,6 +221,7 @@ export const useDepositeRequestStore = defineStore('depositeRequest', () => {
     loading,
     error,
     fetchDepositeRequests,
+    fetchMyDepositeRequests,
     fetchManagers,
     fetchDepositeRequest,
     createDepositeRequest,

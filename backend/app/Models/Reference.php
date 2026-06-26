@@ -46,6 +46,15 @@ class Reference extends Model
     protected $appends = ['cover_image_url'];
 
     /**
+     * The attributes that should be cast.
+     *
+     * @var array<string, string>
+     */
+    protected $casts = [
+        'is_new' => 'boolean',
+    ];
+
+    /**
      * Get the cover image URL.
      */
     public function getCoverImageUrlAttribute(): ?string

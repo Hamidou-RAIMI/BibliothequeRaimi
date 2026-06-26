@@ -51,6 +51,14 @@ onMounted(async () => {
 
         <!-- Quick Actions -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <router-link to="/user/demandes" class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition">
+            <h3 class="font-bold text-gray-800 mb-2">
+              <i class="pi pi-file-edit mr-2 text-amber-700"></i>
+              Mes Demandes de Dépôt
+            </h3>
+            <p class="text-gray-600 text-sm">Soumettez et suivez vos demandes de dépôt de références</p>
+          </router-link>
+
           <div class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition">
             <h3 class="font-bold text-gray-800 mb-2">Mes Livres</h3>
             <p class="text-gray-600 text-sm">Gérez votre collection de livres</p>
@@ -59,11 +67,6 @@ onMounted(async () => {
           <div class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition">
             <h3 class="font-bold text-gray-800 mb-2">Catégories</h3>
             <p class="text-gray-600 text-sm">Organisez vos lectures par thème</p>
-          </div>
-
-          <div class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition">
-            <h3 class="font-bold text-gray-800 mb-2">Auteurs</h3>
-            <p class="text-gray-600 text-sm">Explorez vos auteurs préférés</p>
           </div>
         </div>
 

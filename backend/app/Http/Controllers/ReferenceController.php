@@ -98,6 +98,9 @@ class ReferenceController extends Controller
 
         $data = $request->except('cover_image', 'authors');
 
+        // Convertir is_new en booléen
+        $data['is_new'] = filter_var($request->input('is_new', false), FILTER_VALIDATE_BOOLEAN);
+
         // Gestion du téléchargement de l'image de couverture
         if ($request->hasFile('cover_image')) {
             $imagePath = $request->file('cover_image')->store('covers', 'public');
@@ -165,6 +168,11 @@ class ReferenceController extends Controller
         }
 
         $data = $request->except('cover_image', 'authors');
+
+        // Convertir is_new en booléen
+        if ($request->has('is_new')) {
+            $data['is_new'] = filter_var($request->input('is_new'), FILTER_VALIDATE_BOOLEAN);
+        }
 
         // Gestion du téléchargement de l'image de couverture pour la mise à jour
         if ($request->hasFile('cover_image')) {

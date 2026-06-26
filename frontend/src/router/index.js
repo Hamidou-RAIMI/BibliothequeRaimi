@@ -121,6 +121,11 @@ const router = createRouter({
           path: 'dashboard',
           name: 'user-dashboard',
           component: () => import('../views/user/DashboardView.vue'),
+        },
+        {
+          path: 'demandes',
+          name: 'user-deposite-requests',
+          component: () => import('../views/user/DepositeRequestsView.vue'),
         }
       ] 
     },

@@ -96,7 +96,8 @@ Route::middleware('auth:sanctum')->group(function () {
     // ROUTES POUR LA GESTION DES DEMANDES DE DÉPÔT
     // ========================================================================
     // Gestion complète des demandes de dépôt
-    Route::get('/deposite-requests', [DepositeRequestController::class, 'index']);                  // Liste toutes les demandes de dépôt
+    Route::get('/deposite-requests', [DepositeRequestController::class, 'index']);                  // Liste toutes les demandes de dépôt (admin)
+    Route::get('/my-deposite-requests', [DepositeRequestController::class, 'myRequests']);           // Liste les demandes de l'utilisateur connecté
     Route::get('/deposite-requests/{id}', [DepositeRequestController::class, 'show']);              // Affiche une demande de dépôt spécifique
     Route::post('/deposite-requests', [DepositeRequestController::class, 'store']);                 // Crée une nouvelle demande de dépôt
     Route::put('/deposite-requests/{id}', [DepositeRequestController::class, 'update']);            // Modifie une demande de dépôt

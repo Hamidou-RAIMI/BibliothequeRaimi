@@ -11,7 +11,7 @@ class DepositeRequestController extends Controller
 {
     /**
      * =========================================================================
-     * MÉTHODE INDEX : AFFICHER LA LISTE DE TOUTES LES DEMANDES DE DÉPÔT
+     * MÉTHODE INDEX : AFFICHER LA LISTE DE TOUTES LES DEMANDES DE DÉPÔT (ADMIN)
      * =========================================================================
      */
     public function index()
@@ -21,6 +21,25 @@ class DepositeRequestController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Liste des demandes de dépôt récupérée avec succès',
+            'data' => $demandes
+        ], 200);
+    }
+
+    /**
+     * =========================================================================
+     * MÉTHODE MYREQUESTS : AFFICHER LA LISTE DES DEMANDES DE L'UTILISATEUR CONNECTÉ
+     * =========================================================================
+     */
+    public function myRequests(Request $request)
+    {
+        $demandes = DepositeRequest::where('applicant_id', $request->user()->id)
+            ->with(['assignedManager', 'reviews.reviewer'])
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Liste de vos demandes récupérée avec succès',
             'data' => $demandes
         ], 200);
     }
