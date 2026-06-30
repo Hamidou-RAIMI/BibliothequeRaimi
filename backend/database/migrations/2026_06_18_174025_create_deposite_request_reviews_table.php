@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('deposite_request_reviews', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('deposit_request_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('deposite_requests_id')->constrained()->cascadeOnDelete();
 
             $table->foreignId('reviewer_id')->constrained('users')->cascadeOnDelete();
 

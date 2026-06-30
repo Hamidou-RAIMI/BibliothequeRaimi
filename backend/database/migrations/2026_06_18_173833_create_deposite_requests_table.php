@@ -24,6 +24,7 @@ return new class extends Migration
             $table->string('proposed_file');
 
             $table->enum('status', ['pending','approved_by_manager','rejected_by_manager','second_review','approved','rejected','published' ])->default('pending');
+           
             $table->timestamps();
         });
     }
