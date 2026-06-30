@@ -30,6 +30,7 @@ class DepositeRequest extends Model
         'publisher_id',
         'pages',
         'description',
+        'cover_image',
         'proposed_file',
         'status',
     ];

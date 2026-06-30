@@ -8,6 +8,8 @@ import { useToast } from 'primevue/usetoast'
 const depositeRequestStore = useDepositeRequestStore()
 const authStore = useAuthStore()
 const toast = useToast()
+const apiUrl = import.meta.env.VITE_API_URL
+const storageUrl = import.meta.env.VITE_STORAGE_URL
 
 const showDetailModal = ref(false)
 const showReviewModal = ref(false)
@@ -187,6 +189,16 @@ const handleReview = async () => {
           </button>
         </div>
         <div v-if="depositeRequestStore.currentDepositeRequest" class="space-y-4">
+          <!-- Photo de couverture -->
+          <div v-if="depositeRequestStore.currentDepositeRequest.cover_image">
+            <label class="text-sm font-medium text-gray-500 mb-2 block">Photo de couverture</label>
+            <img
+              :src="`${storageUrl}/${depositeRequestStore.currentDepositeRequest.cover_image}`"
+              :alt="depositeRequestStore.currentDepositeRequest.title"
+              class="w-64 h-80 object-cover rounded-lg shadow"
+            />
+          </div>
+
           <div>
             <label class="text-sm font-medium text-gray-500">Titre</label>
             <p class="text-lg font-semibold text-gray-800">{{ depositeRequestStore.currentDepositeRequest.title }}</p>
@@ -221,6 +233,20 @@ const handleReview = async () => {
               </p>
             </div>
           </div>
+
+          <!-- Fichier PDF proposé -->
+          <div v-if="depositeRequestStore.currentDepositeRequest.proposed_file">
+            <label class="text-sm font-medium text-gray-500">Fichier PDF</label>
+            <a
+              :href="`${storageUrl}/${depositeRequestStore.currentDepositeRequest.proposed_file}`"
+              target="_blank"
+              class="inline-flex items-center gap-2 px-4 py-2 bg-amber-100 text-amber-700 rounded-lg hover:bg-amber-200 transition font-semibold"
+            >
+              <i class="pi pi-file-pdf"></i>
+              Consulter le PDF
+            </a>
+          </div>
+
           <div class="flex flex-wrap gap-3 mt-6">
             <button
               @click="openReviewModal"

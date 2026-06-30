@@ -2,9 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\UpdateCategorieRequest;
+use App\Http\Requests\UpdateDepositeRequest;
 use App\Models\DepositeRequest;
 use App\Models\DepositeRequestReview;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controller;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
 class DepositeRequestController extends Controller
@@ -33,7 +37,7 @@ class DepositeRequestController extends Controller
     public function myRequests(Request $request)
     {
         $demandes = DepositeRequest::where('applicant_id', $request->user()->id)
-            ->with(['assignedManager', 'reviews.reviewer'])
+            ->with(['assignedManager', 'reviews.reviewer', 'category', 'publisher'])
             ->orderBy('created_at', 'desc')
             ->get();
 
@@ -51,7 +55,7 @@ class DepositeRequestController extends Controller
      */
     public function show($id)
     {
-        $demande = DepositeRequest::with(['applicant', 'assignedManager', 'reviews.reviewer'])->find($id);
+        $demande = DepositeRequest::with(['applicant', 'assignedManager', 'reviews.reviewer', 'category', 'publisher'])->find($id);
 
         if (!$demande) {
             return response()->json([
@@ -74,32 +78,55 @@ class DepositeRequestController extends Controller
      */
     public function store(Request $request)
     {
-        $validator = Validator::make($request->all(), [
+        // Valider les données de la requête
+        $validator = \Illuminate\Support\Facades\Validator::make($request->all(), [
             'title' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'proposed_file' => 'required|string|max:255',
+            'description' => 'required|string',
             'subtitle' => 'nullable|string|max:255',
             'abstract' => 'nullable|string',
             'isbn' => 'nullable|string|max:50',
             'publication_year' => 'nullable|integer',
-            'language' => 'nullable|in:fr,en,autre',
-            'document_type' => 'nullable|in:livre,memoire,these,article,revue,rapport,guide,autre',
+            'language' => 'required|string',
+            'document_type' => 'required|string',
             'category_id' => 'nullable|exists:categories,id',
             'publisher_id' => 'nullable|exists:publishers,id',
             'pages' => 'nullable|integer',
+            'pdf_file' => 'required|file|mimes:pdf|max:20480', // PDF obligatoire, max 20 MB
+            'cover_image' => 'nullable|file|mimes:jpeg,jpg,png|max:2048' // Photo de couverture, max 2 MB
         ]);
 
+        // Si la validation échoue, renvoyer les erreurs
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
-                'message' => 'Erreur de validation des données',
+                'message' => 'Erreur de validation',
                 'errors' => $validator->errors()
             ], 422);
         }
 
-        $data = $request->all();
+        // Initialiser les données à sauvegarder
+        $data = $validator->validated();
         $data['applicant_id'] = $request->user()->id;
+        
+        // Gestion de l'upload du fichier PDF
+        if ($request->hasFile('pdf_file')) {
+            // Enregistrer le fichier dans le disque "public" dans le dossier "pdfs"
+            $pdfPath = $request->file('pdf_file')->store('pdfs', 'public');
+            // Stocker le chemin dans la colonne "proposed_file"
+            $data['proposed_file'] = $pdfPath;
+        }
+
+        // Gestion de l'upload de la photo de couverture
+        if ($request->hasFile('cover_image')) {
+            // Enregistrer la photo dans le disque "public" dans le dossier "covers"
+            $coverPath = $request->file('cover_image')->store('covers', 'public');
+            // Stocker le chemin dans la colonne "cover_image"
+            $data['cover_image'] = $coverPath;
+        }
+
+        // Créer la demande de dépôt
         $demande = DepositeRequest::create($data);
+        // Charger les relations pour la réponse
         $demande->load(['applicant', 'assignedManager']);
 
         return response()->json([
@@ -111,10 +138,53 @@ class DepositeRequestController extends Controller
 
     /**
      * =========================================================================
+     * MÉTHODE DESTROY : SUPPRIMER UNE DEMANDE DE DÉPÔT
+     * =========================================================================
+     */
+    public function destroy(Request $request, $id)
+    {
+        // Récupérer la demande de dépôt
+        $demande = DepositeRequest::find($id);
+
+        // Vérifier si la demande existe
+        if (!$demande) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Demande de dépôt non trouvée'
+            ], 404);
+        }
+
+        // Vérifier si l'utilisateur est le propriétaire de la demande
+        if ($demande->applicant_id !== $request->user()->id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Non autorisé à supprimer cette demande'
+            ], 403);
+        }
+
+        // Supprimer les fichiers associés si ils existent
+        if ($demande->proposed_file && Storage::disk('public')->exists($demande->proposed_file)) {
+            Storage::disk('public')->delete($demande->proposed_file);
+        }
+        if ($demande->cover_image && Storage::disk('public')->exists($demande->cover_image)) {
+            Storage::disk('public')->delete($demande->cover_image);
+        }
+
+        // Supprimer la demande
+        $demande->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Demande de dépôt supprimée avec succès !'
+        ], 200);
+    }
+
+    /**
+     * =========================================================================
      * MÉTHODE UPDATE : MODIFIER UNE DEMANDE DE DÉPÔT EXISTANTE
      * =========================================================================
      */
-    public function update(Request $request, $id)
+    public function update(UpdateDepositeRequest $request, $id)
     {
         $demande = DepositeRequest::find($id);
 
@@ -125,23 +195,11 @@ class DepositeRequestController extends Controller
             ], 404);
         }
 
-        $validator = Validator::make($request->all(), [
-            'title' => 'sometimes|string|max:255',
-            'description' => 'nullable|string',
-            'proposed_file' => 'sometimes|string|max:255',
-            'status' => 'sometimes|in:pending,assigned,reassigned,approved_by_manager,rejected_by_manager,second_review,approved,rejected,published',
-            'assigned_manager_id' => 'nullable|exists:users,id',
-        ]);
+       
 
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Erreur de validation',
-                'errors' => $validator->errors()
-            ], 422);
-        }
+        
 
-        $demande->update($request->all());
+        $demande->update($request->validated());
         $demande->load(['applicant', 'assignedManager', 'reviews.reviewer']);
 
         return response()->json([
@@ -304,6 +362,7 @@ class DepositeRequestController extends Controller
             'publisher_id' => $demande->publisher_id,
             'pages' => $demande->pages,
             'uploaded_by' => $demande->applicant_id,
+            'cover_image' => $demande->cover_image,
             'file_path' => $demande->proposed_file,
             'status' => 'published',
             'is_new' => true

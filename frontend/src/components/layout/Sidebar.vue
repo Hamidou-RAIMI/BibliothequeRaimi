@@ -54,7 +54,6 @@ const menuItems = computed(() => {
   }
   return []
 })
-
 </script>
 
 <template>

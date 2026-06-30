@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreCategorieRequest;
 use App\Models\Categorie;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 
@@ -20,12 +22,21 @@ class CategorieController extends Controller
      */
     public function index()
     {
-        $categories = Categorie::orderBy('name')->get();
-        return response()->json([
-            'success' => true,
-            'message' => 'Catégories récupérées avec succès',
-            'data' => $categories
-        ]);
+        try {
+            $categories = Categorie::orderBy('name')->get();
+            return response()->json([
+                'success' => true,
+                'message' => 'Catégories récupérées avec succès',
+                'data' => $categories
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur lors de la récupération des catégories',
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ], 500);
+        }
     }
 
     /**
@@ -52,27 +63,15 @@ class CategorieController extends Controller
      * Crée une nouvelle catégorie dans la base de données
      * @param Request $request - Requête contenant les données de la catégorie
      */
-    public function store(Request $request)
+    public function store(StoreCategorieRequest $request)
     {
-        // Valide les données envoyées
-        $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'status' => 'sometimes|string|in:active,inactive',
-        ]);
+        // Récupère uniquement les données validées par la Form Request
+         $data = $request->validated();
 
-        // Si la validation échoue, renvoie les erreurs
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Erreur de validation',
-                'errors' => $validator->errors()
-            ], 422);
-        }
+        // Génère automatiquement le slug à partir du nom validé
+         $data['slug'] = Str::slug($data['name']);
 
-        // Prépare les données avec le slug
-        $data = $request->all();
-        $data['slug'] = Str::slug($data['name']);
+    
 
         // Crée la catégorie avec les données validées
         $categorie = Categorie::create($data);
@@ -100,24 +99,14 @@ class CategorieController extends Controller
             ], 404);
         }
 
-        // Valide les données envoyées
-        $validator = Validator::make($request->all(), [
-            'name' => 'sometimes|string|max:255',
-            'description' => 'nullable|string',
-            'status' => 'sometimes|string|in:active,inactive',
-        ]);
+       
 
-        // Si la validation échoue, renvoie les erreurs
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Erreur de validation',
-                'errors' => $validator->errors()
-            ], 422);
-        }
+        
 
         // Prépare les données, met à jour le slug si le nom change
-        $data = $request->all();
+        //recuperer uniquement els donnée validerr
+        $data = $request->validated();
+
         if (isset($data['name'])) {
             $data['slug'] = Str::slug($data['name']);
         }

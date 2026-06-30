@@ -12,6 +12,8 @@ const authStore = useAuthStore()
 const categoryStore = useCategoryStore()
 const publisherStore = usePublisherStore()
 const toast = useToast()
+const apiUrl = import.meta.env.VITE_API_URL
+const storageUrl = import.meta.env.VITE_STORAGE_URL
 
 const showDetailModal = ref(false)
 const showAssignModal = ref(false)
@@ -285,6 +287,16 @@ const handlePublish = async () => {
           </button>
         </div>
         <div v-if="depositeRequestStore.currentDepositeRequest" class="space-y-6">
+          <!-- Photo de couverture -->
+          <div v-if="depositeRequestStore.currentDepositeRequest.cover_image">
+            <label class="text-sm font-medium text-gray-500 mb-2 block">Photo de couverture</label>
+            <img
+              :src="`${storageUrl}/${depositeRequestStore.currentDepositeRequest.cover_image}`"
+              :alt="depositeRequestStore.currentDepositeRequest.title"
+              class="w-64 h-80 object-cover rounded-lg shadow"
+            />
+          </div>
+
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label class="block text-sm font-medium text-gray-500">Titre</label>
@@ -330,10 +342,19 @@ const handlePublish = async () => {
               <label class="block text-sm font-medium text-gray-500">Pages</label>
               <p class="text-gray-700">{{ depositeRequestStore.currentDepositeRequest.pages || '-' }}</p>
             </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-500">Fichier proposé</label>
-              <p class="text-gray-700">{{ depositeRequestStore.currentDepositeRequest.proposed_file || '-' }}</p>
-            </div>
+          </div>
+
+          <!-- Fichier PDF proposé -->
+          <div v-if="depositeRequestStore.currentDepositeRequest.proposed_file">
+            <label class="text-sm font-medium text-gray-500">Fichier PDF</label>
+            <a
+              :href="`${storageUrl}/${depositeRequestStore.currentDepositeRequest.proposed_file}`"
+              target="_blank"
+              class="inline-flex items-center gap-2 px-4 py-2 bg-amber-100 text-amber-700 rounded-lg hover:bg-amber-200 transition font-semibold"
+            >
+              <i class="pi pi-file-pdf"></i>
+              Consulter le PDF
+            </a>
           </div>
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-6 border-t border-gray-200">

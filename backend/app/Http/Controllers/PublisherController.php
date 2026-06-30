@@ -2,8 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StorePublisherRequest;
+use App\Http\Requests\UpdatePublisherRequest;
 use App\Models\Publisher;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Validator;
 
 // ==============================================
@@ -51,27 +54,14 @@ class PublisherController extends Controller
      * Crée un nouvel éditeur dans la base de données
      * @param Request $request - Requête contenant les données de l'éditeur
      */
-    public function store(Request $request)
+    public function store(StorePublisherRequest $request)
     {
-        // Valide les données envoyées
-        $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'country' => 'nullable|string|max:255',
-            'website' => 'nullable|url|max:255',
-        ]);
+      
 
-        // Si la validation échoue, renvoie les erreurs
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Erreur de validation',
-                'errors' => $validator->errors()
-            ], 422);
-        }
+       
 
-        // Crée l'éditeur avec les données validées
-        $publisher = Publisher::create($request->all());
+       // Crée l'éditeur uniquement avec les données nettoyées et validées
+    $publisher = Publisher::create($request->validated());
 
         // Renvoie une réponse de succès avec l'éditeur créé
         return response()->json([
@@ -86,7 +76,7 @@ class PublisherController extends Controller
      * @param Request $request - Requête contenant les nouvelles données
      * @param int $id - Identifiant de l'éditeur à modifier
      */
-    public function update(Request $request, $id)
+    public function update(UpdatePublisherRequest $request, $id)
     {
         $publisher = Publisher::find($id);
         if (!$publisher) {
@@ -96,25 +86,13 @@ class PublisherController extends Controller
             ], 404);
         }
 
-        // Valide les données envoyées
-        $validator = Validator::make($request->all(), [
-            'name' => 'sometimes|string|max:255',
-            'description' => 'nullable|string',
-            'country' => 'nullable|string|max:255',
-            'website' => 'nullable|url|max:255',
-        ]);
-
-        // Si la validation échoue, renvoie les erreurs
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Erreur de validation',
-                'errors' => $validator->errors()
-            ], 422);
-        }
-
+      
+     
         // Met à jour l'éditeur
-        $publisher->update($request->all());
+    $publisher->update($request->validated());
+       
+
+        
 
         return response()->json([
             'success' => true,

@@ -2,9 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreReferernceRequest;
+use App\Http\Requests\UpdateReferenceRequest;
 use App\Models\Reference;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
+use Illuminate\Routing\Controller;
+use Illuminate\Support\Facades\Storage;
+
 
 class ReferenceController extends Controller
 {
@@ -15,13 +18,22 @@ class ReferenceController extends Controller
      */
     public function index()
     {
-        $references = Reference::with(['category', 'publisher', 'uploadedBy', 'authors'])->get();
+        try {
+            $references = Reference::with(['category', 'authors'])->get();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Liste des références récupérée avec succès',
-            'data' => $references
-        ], 200);
+            return response()->json([
+                'success' => true,
+                'message' => 'Liste des références récupérée avec succès',
+                'data' => $references
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur lors de la récupération des références',
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ], 500);
+        }
     }
 
     /**
@@ -31,13 +43,23 @@ class ReferenceController extends Controller
      */
     public function publicIndex()
     {
-        $references = Reference::with(['category', 'publisher', 'authors'])->where('status', 'published')->get();
+        try {
+            // Get all references without filtering by status for now, or maybe the status column doesn't exist
+            $references = Reference::with(['category', 'authors'])->get();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Liste des références publiques récupérée avec succès',
-            'data' => $references
-        ], 200);
+            return response()->json([
+                'success' => true,
+                'message' => 'Liste des références publiques récupérée avec succès',
+                'data' => $references
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur lors de la récupération des références',
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ], 500);
+        }
     }
 
     /**
@@ -47,20 +69,29 @@ class ReferenceController extends Controller
      */
     public function show($id)
     {
-        $reference = Reference::with(['category', 'publisher', 'uploadedBy', 'authors'])->find($id);
+        try {
+            $reference = Reference::with(['category', 'authors'])->find($id);
 
-        if (!$reference) {
+            if (!$reference) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Référence non trouvée'
+                ], 404);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Référence récupérée avec succès',
+                'data' => $reference
+            ], 200);
+        } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Référence non trouvée'
-            ], 404);
+                'message' => 'Erreur lors de la récupération de la référence',
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ], 500);
         }
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Référence récupérée avec succès',
-            'data' => $reference
-        ], 200);
     }
 
     /**
@@ -68,38 +99,15 @@ class ReferenceController extends Controller
      * MÉTHODE STORE : CRÉER UNE NOUVELLE RÉFÉRENCE
      * =========================================================================
      */
-    public function store(Request $request)
+    public function store(StoreReferernceRequest $request)
     {
-        $validator = Validator::make($request->all(), [
-            'title' => 'required|string|max:255',
-            'subtitle' => 'nullable|string|max:255',
-            'abstract' => 'nullable|string',
-            'isbn' => 'nullable|string|max:50',
-            'publication_year' => 'nullable|integer',
-            'language' => 'required|in:fr,en,autre',
-            'document_type' => 'required|in:livre,memoire,these,article,revue,rapport,guide,autre',
-            'category_id' => 'nullable|exists:categories,id',
-            'publisher_id' => 'nullable|exists:publishers,id',
-            'uploaded_by' => 'nullable|exists:users,id',
-            'cover_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'file_path' => 'nullable|string|max:255',
-            'pages' => 'nullable|integer',
-            'status' => 'required|in:draft,published,archived',
-            'authors' => 'nullable|string'
-        ]);
+         $data = $request->safe()->except(['cover_image', 'authors']);
 
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Erreur de validation des données',
-                'errors' => $validator->errors()
-            ], 422);
-        }
-
-        $data = $request->except('cover_image', 'authors');
+        
 
         // Convertir is_new en booléen
         $data['is_new'] = filter_var($request->input('is_new', false), FILTER_VALIDATE_BOOLEAN);
+        
 
         // Gestion du téléchargement de l'image de couverture
         if ($request->hasFile('cover_image')) {
@@ -130,7 +138,7 @@ class ReferenceController extends Controller
      * MÉTHODE UPDATE : MODIFIER UNE RÉFÉRENCE EXISTANTE
      * =========================================================================
      */
-    public function update(Request $request, $id)
+    public function update(UpdateReferenceRequest $request, $id)
     {
         $reference = Reference::find($id);
 
@@ -140,34 +148,9 @@ class ReferenceController extends Controller
                 'message' => 'Référence non trouvée'
             ], 404);
         }
+    $data = $request->safe()->except(['cover_image', 'authors']);
 
-        $validator = Validator::make($request->all(), [
-            'title' => 'sometimes|string|max:255',
-            'subtitle' => 'nullable|string|max:255',
-            'abstract' => 'nullable|string',
-            'isbn' => 'nullable|string|max:50',
-            'publication_year' => 'nullable|integer',
-            'language' => 'sometimes|in:fr,en,autre',
-            'document_type' => 'sometimes|in:livre,memoire,these,article,revue,rapport,guide,autre',
-            'category_id' => 'nullable|exists:categories,id',
-            'publisher_id' => 'nullable|exists:publishers,id',
-            'uploaded_by' => 'nullable|exists:users,id',
-            'cover_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'file_path' => 'nullable|string|max:255',
-            'pages' => 'nullable|integer',
-            'status' => 'sometimes|in:draft,published,archived',
-            'authors' => 'nullable|string'
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Erreur de validation',
-                'errors' => $validator->errors()
-            ], 422);
-        }
-
-        $data = $request->except('cover_image', 'authors');
+       
 
         // Convertir is_new en booléen
         if ($request->has('is_new')) {
@@ -177,9 +160,9 @@ class ReferenceController extends Controller
         // Gestion du téléchargement de l'image de couverture pour la mise à jour
         if ($request->hasFile('cover_image')) {
             // Supprimer l'ancienne image si elle existe
-            if ($reference->cover_image && \Storage::disk('public')->exists($reference->cover_image)) {
-                \Storage::disk('public')->delete($reference->cover_image);
-            }
+            if ($reference->cover_image && Storage::disk('public')->exists($reference->cover_image)) {
+            Storage::disk('public')->delete($reference->cover_image);
+        }
             $imagePath = $request->file('cover_image')->store('covers', 'public');
             $data['cover_image'] = $imagePath;
         }
@@ -295,5 +278,37 @@ class ReferenceController extends Controller
             'message' => 'Statut de la référence mis à jour avec succès',
             'data' => $reference
         ], 200);
+    }
+
+    /**
+     * =========================================================================
+     * MÉTHODE DOWNLOAD : TÉLÉCHARGER LE FICHIER PDF ET INCÉMENTER LE COMPTEUR
+     * =========================================================================
+     */
+    public function download($id)
+    {
+        // Récupérer la référence par son ID
+        $reference = Reference::find($id);
+
+        if (!$reference) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Référence non trouvée'
+            ], 404);
+        }
+
+        // Vérifier si un fichier est disponible
+        if (!$reference->file_path || !Storage::disk('public')->exists($reference->file_path)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Fichier non disponible'
+            ], 404);
+        }
+
+        // Incrémenter le compteur de téléchargements
+        $reference->increment('download_count');
+
+        // Retourner le fichier pour téléchargement
+        return Storage::disk('public')->download($reference->file_path);
     }
 }

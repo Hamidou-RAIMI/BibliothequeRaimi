@@ -3,8 +3,12 @@
 namespace App\Http\Controllers;
 
 // On importe les classes nécessaires au fonctionnement du contrôleur
+
+use App\Http\Requests\StoreUserRequest;
+use App\Http\Requests\UpdateUserRequest;
 use Illuminate\Http\Request;
 use App\Models\User;
+use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 
@@ -90,36 +94,15 @@ class UserController extends Controller
      * MÉTHODE STORE : CRÉER UN NOUVEL UTILISATEUR
      * =========================================================================
      */
-    public function store(Request $request)
+    public function store(StoreUserRequest $requestStore)
     {
-        $validator = Validator::make($request->all(), [
-            'first_name' => 'required|string|max:255',
-            'last_name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email',
-            'phone' => 'nullable|string|max:20',
-            'password' => 'required|string|min:6',
-            'role' => ['required', 'in:admin,responsable_rh,responsable_demande,user'],
-            'status' => ['required', 'in:active,inactive,suspended']
-        ]);
+        $data = $requestStore->validated();
 
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Erreur de validation des données',
-                'errors' => $validator->errors()
-            ], 422);
+        if (!isset($data['statut'])) {
+            $data['statut'] = 'active'; // Valeur par défaut
+           
         }
-
-        $user = User::create([
-            'first_name' => $request->first_name,
-            'last_name' => $request->last_name,
-            'email' => $request->email,
-            'phone' => $request->phone,
-            'password' => Hash::make($request->password),
-            'role' => $request->role,
-            'status' => $request->status,
-            'email_verified_at' => now()
-        ]);
+        $user = User::create($data);
 
         return response()->json([
             'success' => true,
@@ -133,7 +116,7 @@ class UserController extends Controller
      * MÉTHODE UPDATE : MODIFIER UN UTILISATEUR EXISTANT
      * =========================================================================
      */
-    public function update(Request $request, $id)
+    public function update(UpdateUserRequest $request, $id)
     {
         $user = User::find($id);
 
@@ -144,28 +127,17 @@ class UserController extends Controller
             ], 404);
         }
 
-        $validator = Validator::make($request->all(), [
-            'first_name' => 'sometimes|string|max:255',
-            'last_name' => 'sometimes|string|max:255',
-            'email' => 'sometimes|email|unique:users,email,' . $id,
-            'phone' => 'nullable|string|max:20',
-            'password' => 'sometimes|string|min:6',
-            'role' => ['sometimes', 'in:admin,responsable_rh,responsable_demande,user'],
-            'status' => ['sometimes', 'in:active,inactive,suspended']
-        ]);
+        $updateData = $request->validated();
 
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Erreur de validation',
-                'errors' => $validator->errors()
-            ], 422);
-        }
-
-        $updateData = $request->all();
+        
         if (isset($updateData['password'])) {
-            $updateData['password'] = Hash::make($updateData['password']);
-        }
+        $updateData['password'] = Hash::make($updateData['password']);
+    }
+
+        // $updateData = $request->all();
+        // if (isset($updateData['password'])) {
+        //     $updateData['password'] = Hash::make($updateData['password']);
+        // }
 
         $user->update($updateData);
 

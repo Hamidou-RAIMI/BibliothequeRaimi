@@ -1,8 +1,10 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import HomeView from '@/views/HomeView.vue'
+// import HomeView from '@/views/HomeView.vue'
 import LoginView from '@/views/LoginView.vue'
 import RegisterView from '@/views/RegisterView.vue'
 import { useAuthStore } from '@/stores/auth'
+import DashboardView from '../views/user/DashboardView.vue'
+import ReferenceDetailView from '@/views/ReferenceDetailView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -10,7 +12,13 @@ const router = createRouter({
     {
       path: '/',
       name: 'home',
-      component: HomeView,
+      component: DashboardView,
+    },
+    {
+      path: '/references/:id',
+      name: 'reference-detail',
+      component: ReferenceDetailView,
+      meta: { requiresAuth: true, requiresActive: true }
     },
     {
       path: '/login',
@@ -142,7 +150,7 @@ const getDashboardRoute = (role) => {
     case 'responsable_rh':
       return '/responsable_rh/dashboard'
     case 'user':
-      return '/user/dashboard'
+      return '/'
     default:
       return '/'
   }
@@ -153,7 +161,7 @@ router.beforeEach(async (to, from) => {
   const authStore = useAuthStore()
   
   // Récupère l'utilisateur si non authentifié en local mais session active côté API (ex: rafraîchissement)
-  if (!authStore.user && !authStore.isAuthenticated) {
+  if (!authStore.user && authStore.isAuthenticated) {
     try {
       await authStore.fetchUser()
     } catch (e) {
@@ -170,6 +178,11 @@ router.beforeEach(async (to, from) => {
     // Vérification stricte des autorisations de rôle
     if (to.meta.role && authStore.user?.role !== to.meta.role) {
       return getDashboardRoute(authStore.user?.role)
+    }
+    
+    // Vérification de l'activation du compte
+    if (to.meta.requiresActive && authStore.user?.status !== 'active') {
+      return '/'
     }
     
     // Si authentifié et rôle correct, la navigation continue implicitement

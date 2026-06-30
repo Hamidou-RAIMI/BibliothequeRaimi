@@ -47,6 +47,7 @@ class ReferenceSeeder extends Seeder
                 'document_type' => 'livre',
                 'pages' => 1500,
                 'status' => 'published',
+                'cover_image' => 'covers/les_miserables.jpg',
             ],
             [
                 'title' => 'La Relativité',
@@ -58,6 +59,7 @@ class ReferenceSeeder extends Seeder
                 'document_type' => 'livre',
                 'pages' => 300,
                 'status' => 'published',
+                
             ],
             [
                 'title' => 'Le Deuxième Sexe',

@@ -100,7 +100,7 @@ export const useUserStore = defineStore('user', () => {
     error.value = null
     try {
       const response = await client.post('/users', userData)
-      users.value.push(response.data.data) // On ajoute le nouvel utilisateur à la liste
+      users.value.unshift(response.data.data) // On ajoute le nouvel utilisateur au debut de la liste
       return response.data
     } catch (err) {
       error.value = err.response?.data?.message || 'Erreur lors de la création de l\'utilisateur'

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Author;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Validator;
 
 // ==============================================
@@ -53,17 +54,17 @@ class AuthorController extends Controller
      */
     public function store(Request $request)
     {
-        // Valide les données envoyées
+        // Valide les données de la requête
         $validator = Validator::make($request->all(), [
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
             'biography' => 'nullable|string',
             'nationality' => 'nullable|string|max:255',
             'birth_date' => 'nullable|date',
-            'death_date' => 'nullable|date|after_or_equal:birth_date',
+            'death_date' => 'nullable|date',
         ]);
 
-        // Si la validation échoue, renvoie les erreurs
+        // Si validation échoue
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
@@ -73,7 +74,7 @@ class AuthorController extends Controller
         }
 
         // Crée l'auteur avec les données validées
-        $author = Author::create($request->all());
+        $author = Author::create($validator->validated());
 
         // Renvoie une réponse de succès avec l'auteur créé
         return response()->json([
@@ -98,17 +99,17 @@ class AuthorController extends Controller
             ], 404);
         }
 
-        // Valide les données envoyées
+        // Valide les données de la requête
         $validator = Validator::make($request->all(), [
             'first_name' => 'sometimes|string|max:255',
             'last_name' => 'sometimes|string|max:255',
             'biography' => 'nullable|string',
             'nationality' => 'nullable|string|max:255',
             'birth_date' => 'nullable|date',
-            'death_date' => 'nullable|date|after_or_equal:birth_date',
+            'death_date' => 'nullable|date',
         ]);
 
-        // Si la validation échoue, renvoie les erreurs
+        // Si validation échoue
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
@@ -118,7 +119,7 @@ class AuthorController extends Controller
         }
 
         // Met à jour l'auteur
-        $author->update($request->all());
+        $author->update($validator->validated());
 
         return response()->json([
             'success' => true,

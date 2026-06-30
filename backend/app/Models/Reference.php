@@ -57,9 +57,24 @@ class Reference extends Model
     /**
      * Get the cover image URL.
      */
-    public function getCoverImageUrlAttribute(): ?string
+    public function getCoverImageUrlAttribute(): string
     {
-        return $this->cover_image ? url('storage/' . $this->cover_image) : null;
+        if ($this->cover_image) {
+            return url('storage/' . $this->cover_image);
+        }
+
+        // Image de placeholder par défaut
+        $placeholderUrl = 'https://blog.bod.fr/mettre-en-forme/faire-une-couverture-de-livre/';
+
+        // On peut aussi définir des images différentes par catégorie si on veut
+        // if ($this->category_id) {
+        //     switch ($this->category_id) {
+        //         case 1: $placeholderUrl = '...'; break;
+        //         case 2: $placeholderUrl = '...'; break;
+        //     }
+        // }
+
+        return $placeholderUrl;
     }
 
     /**
