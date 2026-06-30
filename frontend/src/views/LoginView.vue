@@ -2,9 +2,12 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { useToast } from 'primevue/usetoast'
+import Toast from 'primevue/toast'
 
 const router = useRouter()
 const authStore = useAuthStore()
+const toast = useToast()
 
 const email = ref('')
 const password = ref('')
@@ -14,6 +17,7 @@ const handleLogin = async () => {
   errorMsg.value = ''
   try {
     await authStore.login(email.value, password.value)
+    toast.add({ severity: 'success', summary: 'Succès', detail: 'Connexion réussie', life: 3000 })
     // Redirect to correct dashboard based on role
     const role = authStore.user.role
     switch(role) {
@@ -34,6 +38,7 @@ const handleLogin = async () => {
     }
   } catch (err) {
     errorMsg.value = authStore.error
+    toast.add({ severity: 'error', summary: 'Erreur', detail: errorMsg.value, life: 3000 })
   }
 }
 </script>
@@ -132,5 +137,6 @@ const handleLogin = async () => {
       </div>
 
     </div>
+    <Toast position="top-right" />
   </div>
 </template>

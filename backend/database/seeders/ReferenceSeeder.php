@@ -38,7 +38,7 @@ class ReferenceSeeder extends Seeder
         // Tableau de références réalistes à créer
         $references = [
             [
-                'title' => 'Les Misérables',
+                'title' => 'Les fantômes',
                 'subtitle' => 'Roman social et historique',
                 'abstract' => 'Un roman majeur de Victor Hugo qui raconte l\'histoire de Jean Valjean, un ancien forçat qui cherche à se réinsérer dans la société.',
                 'isbn' => '9782070409352',
@@ -47,10 +47,10 @@ class ReferenceSeeder extends Seeder
                 'document_type' => 'livre',
                 'pages' => 1500,
                 'status' => 'published',
-                'cover_image' => 'covers/les_miserables.jpg',
+                'cover_image' => 'https://picsum.photos/400/600?random=1',
             ],
             [
-                'title' => 'La Relativité',
+                'title' => 'La science',
                 'subtitle' => 'Exposé de la théorie de la relativité restreinte et générale',
                 'abstract' => 'L\'ouvrage fondateur d\'Albert Einstein qui présente sa théorie révolutionnaire de l\'espace, du temps et de la gravitation.',
                 'isbn' => '9782070401842',
@@ -59,7 +59,7 @@ class ReferenceSeeder extends Seeder
                 'document_type' => 'livre',
                 'pages' => 300,
                 'status' => 'published',
-                
+                'cover_image' => 'https://picsum.photos/400/600?random=2',
             ],
             [
                 'title' => 'Le Deuxième Sexe',
@@ -71,6 +71,7 @@ class ReferenceSeeder extends Seeder
                 'document_type' => 'livre',
                 'pages' => 800,
                 'status' => 'published',
+                'cover_image' => 'https://picsum.photos/400/600?random=3',
             ],
             [
                 'title' => 'L\'Être et le Néant',
@@ -82,6 +83,7 @@ class ReferenceSeeder extends Seeder
                 'document_type' => 'livre',
                 'pages' => 750,
                 'status' => 'published',
+                'cover_image' => 'https://picsum.photos/400/600?random=4',
             ],
             [
                 'title' => 'Sur l\'Origine des Espèces',
@@ -93,6 +95,7 @@ class ReferenceSeeder extends Seeder
                 'document_type' => 'livre',
                 'pages' => 600,
                 'status' => 'published',
+                'cover_image' => 'https://picsum.photos/400/600?random=5',
             ],
         ];
 

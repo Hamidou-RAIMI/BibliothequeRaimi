@@ -5,6 +5,7 @@ import client, { BASE_URL } from '@/api/client'
 export const useAuthStore = defineStore('auth', () => {
   const user = ref(null)
   const loading = ref(false)
+  const loadingInitial = ref(true) // Nouvel état : chargement initial
   const error = ref(null)
 
   const isAuthenticated = computed(() => !!user.value)
@@ -79,12 +80,15 @@ export const useAuthStore = defineStore('auth', () => {
       user.value = response.data
     } catch (err) {
       user.value = null
+    } finally {
+      loadingInitial.value = false
     }
   }
 
   return {
     user,
     loading,
+    loadingInitial,
     error,
     isAuthenticated,
     login,

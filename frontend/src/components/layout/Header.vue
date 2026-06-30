@@ -3,10 +3,12 @@ import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { ref, onMounted, onUnmounted } from 'vue'
 import { Search, Bell, Menu, ChevronDown, LogOut, User } from 'lucide-vue-next'
+import { useToast } from 'primevue/usetoast'
 
 const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
+const toast = useToast()
 
 
 const dropdownOpen = ref(false)
@@ -41,6 +43,7 @@ const handleLoginClick = () => {
 const handleLogout = async () => {
   dropdownOpen.value = false
   await authStore.logout()
+  toast.add({ severity: 'success', summary: 'Succès', detail: 'Déconnexion réussie', life: 3000 })
   router.push('/')
 }
 defineProps({

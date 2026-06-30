@@ -60,19 +60,16 @@ class Reference extends Model
     public function getCoverImageUrlAttribute(): string
     {
         if ($this->cover_image) {
+            // Vérifie si c'est déjà une URL complète (http ou https)
+            if (filter_var($this->cover_image, FILTER_VALIDATE_URL)) {
+                return $this->cover_image;
+            }
+            // Sinon, c'est un chemin local dans storage
             return url('storage/' . $this->cover_image);
         }
 
-        // Image de placeholder par défaut
-        $placeholderUrl = 'https://blog.bod.fr/mettre-en-forme/faire-une-couverture-de-livre/';
-
-        // On peut aussi définir des images différentes par catégorie si on veut
-        // if ($this->category_id) {
-        //     switch ($this->category_id) {
-        //         case 1: $placeholderUrl = '...'; break;
-        //         case 2: $placeholderUrl = '...'; break;
-        //     }
-        // }
+        // Image de placeholder par défaut valide
+        $placeholderUrl = 'https://picsum.photos/400/600';
 
         return $placeholderUrl;
     }

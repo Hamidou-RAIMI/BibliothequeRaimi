@@ -2,6 +2,7 @@
 import { ref } from 'vue';
 import Header from '@/components/layout/Header.vue';
 import Sidebar from '@/components/layout/Sidebar.vue';
+import Toast from 'primevue/toast';
 
 const isSidebarCollapsed = ref(false);
 const isMobileMenuOpen = ref(false);
@@ -34,6 +35,7 @@ const closeMobileSidebar = () => {
         <RouterView />
       </main>
     </div>
+    <Toast position="top-right" />
   </div>
 </template>
 

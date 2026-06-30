@@ -160,13 +160,9 @@ const getDashboardRoute = (role) => {
 router.beforeEach(async (to, from) => {
   const authStore = useAuthStore()
   
-  // Récupère l'utilisateur si non authentifié en local mais session active côté API (ex: rafraîchissement)
-  if (!authStore.user && authStore.isAuthenticated) {
-    try {
-      await authStore.fetchUser()
-    } catch (e) {
-      // L'utilisateur n'est pas authentifié, échec silencieux attendu
-    }
+  // Attendre que le chargement initial soit terminé
+  while (authStore.loadingInitial) {
+    await new Promise(resolve => setTimeout(resolve, 50))
   }
 
   // 1. Vérification des routes nécessitant une authentification

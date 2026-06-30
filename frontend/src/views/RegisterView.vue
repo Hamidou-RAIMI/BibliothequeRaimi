@@ -2,9 +2,12 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { useToast } from 'primevue/usetoast'
+import Toast from 'primevue/toast'
 
 const router = useRouter()
 const authStore = useAuthStore()
+const toast = useToast()
 
 const firstName = ref('')
 const lastName = ref('')
@@ -25,9 +28,11 @@ const handleRegister = async () => {
             password.value,
             passwordConfirmation.value
         )
+        toast.add({ severity: 'success', summary: 'Succès', detail: 'Inscription réussie', life: 3000 })
         router.push('/login')
     } catch (err) {
         errorMsg.value = err.response?.data?.errors || err.response?.data?.message || 'Erreur d\'inscription'
+        toast.add({ severity: 'error', summary: 'Erreur', detail: Array.isArray(errorMsg.value) ? errorMsg.value[0] : errorMsg.value, life: 3000 })
         throw err
     }
 }
@@ -173,5 +178,6 @@ const handleRegister = async () => {
       </div>
 
     </div>
+    <Toast position="top-right" />
   </div>
 </template>
