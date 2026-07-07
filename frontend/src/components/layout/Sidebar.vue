@@ -44,7 +44,7 @@ const menuRole = {
     { name: 'Utilisateurs', path: '/responsable_rh/utilisateurs', icon: Users },
   ],
   user: [
-    { name: 'Dashboard', path: '/user/dashboard', icon: LayoutDashboard },
+    { name: 'Acceuil', path: '/user/dashboard', icon: LayoutDashboard },
   ],
 }
 

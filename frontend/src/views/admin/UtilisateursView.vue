@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { useAuthStore } from '@/stores/auth'
@@ -23,11 +23,13 @@ const isModalOpen = ref(false)
 const modalMode = ref('create') // 'create' ou 'edit'
 const showDeleteModal = ref(false)
 const userToDelete = ref(null)
+const currentPage = ref(1)
 
 // Recherche et filtres
 const searchQuery = ref('')
 const filterRole = ref('')
 const filterStatus = ref('')
+
 
 // Données du formulaire
 const formData = ref({
@@ -45,29 +47,31 @@ const goToArchives = () => {
 }
 
 const onPageChange = (event) => {
-  userStore.fetchUsers(event.page + 1)
+  currentPage.value = event.page + 1
+  loadUsers()
 }
 
 // ========================================================================
-// PROPRIÉTÉ COMPUTÉE : FILTRER LES UTILISATEURS
+// PROPRIÉTÉ COMPUTÉE : FILTRER LES UTILISATEURS (maintenant côté backend)
 // ========================================================================
-const filteredUsers = computed(() => {
-  return userStore.users.filter(user => {
-    // Recherche par nom, prénom ou email
-    const matchesSearch = 
-      searchQuery.value === '' ||
-      user.first_name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-      user.last_name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchQuery.value.toLowerCase())
+const filteredUsers = computed(() => userStore.users)
 
-    // Filtre par rôle
-    const matchesRole = filterRole.value === '' || user.role === filterRole.value
+// ========================================================================
+// FONCTION DE CHARGEMENT DES UTILISATEURS AVEC FILTRES
+// ========================================================================
+const loadUsers = () => {
+  const filters = {
+    search: searchQuery.value,
+    role: filterRole.value,
+    status: filterStatus.value
+  }
+  userStore.fetchUsers(currentPage.value, filters)
+}
 
-    // Filtre par statut
-    const matchesStatus = filterStatus.value === '' || user.status === filterStatus.value
-
-    return matchesSearch && matchesRole && matchesStatus
-  })
+// Watch sur les filtres pour recharger les utilisateurs
+watch([searchQuery, filterRole, filterStatus], () => {
+  currentPage.value = 1
+  loadUsers()
 })
 
 // ========================================================================
@@ -75,7 +79,7 @@ const filteredUsers = computed(() => {
 // ========================================================================
 onMounted(async () => {
   try {
-    await userStore.fetchUsers() // On charge les utilisateurs au chargement de la page
+    loadUsers() // On charge les utilisateurs au chargement de la page
   } catch (err) {
     console.error('Erreur lors du chargement des utilisateurs:', err)
     toast.add({ severity: 'error', summary: 'Erreur', detail: 'Erreur lors du chargement des utilisateurs', life: 3000 })

@@ -198,15 +198,61 @@ const handleReview = async () => {
               class="w-64 h-80 object-cover rounded-lg shadow"
             />
           </div>
-
           <div>
             <label class="text-sm font-medium text-gray-500">Titre</label>
             <p class="text-lg font-semibold text-gray-800">{{ depositeRequestStore.currentDepositeRequest.title }}</p>
           </div>
+          
+          <div v-if="depositeRequestStore.currentDepositeRequest.subtitle">
+            <label class="text-sm font-medium text-gray-500">Sous-titre</label>
+            <p class="text-gray-700">{{ depositeRequestStore.currentDepositeRequest.subtitle }}</p>
+          </div>
+          
+          <div v-if="depositeRequestStore.currentDepositeRequest.abstract">
+            <label class="text-sm font-medium text-gray-500">Résumé</label>
+            <p class="text-gray-700">{{ depositeRequestStore.currentDepositeRequest.abstract }}</p>
+          </div>
+          
+          <div v-if="depositeRequestStore.currentDepositeRequest.isbn">
+            <label class="text-sm font-medium text-gray-500">ISBN</label>
+            <p class="text-gray-700">{{ depositeRequestStore.currentDepositeRequest.isbn }}</p>
+          </div>
+          
+          <div v-if="depositeRequestStore.currentDepositeRequest.publication_year">
+            <label class="text-sm font-medium text-gray-500">Année de publication</label>
+            <p class="text-gray-700">{{ depositeRequestStore.currentDepositeRequest.publication_year }}</p>
+          </div>
+          
+          <div>
+            <label class="text-sm font-medium text-gray-500">Langue</label>
+            <p class="text-gray-700">{{ depositeRequestStore.currentDepositeRequest.language }}</p>
+          </div>
+          
+          <div>
+            <label class="text-sm font-medium text-gray-500">Type de document</label>
+            <p class="text-gray-700">{{ depositeRequestStore.currentDepositeRequest.document_type }}</p>
+          </div>
+          
+          <div v-if="depositeRequestStore.currentDepositeRequest.category">
+            <label class="text-sm font-medium text-gray-500">Catégorie</label>
+            <p class="text-gray-700">{{ depositeRequestStore.currentDepositeRequest.category?.name }}</p>
+          </div>
+          
+          <div v-if="depositeRequestStore.currentDepositeRequest.publisher">
+            <label class="text-sm font-medium text-gray-500">Éditeur</label>
+            <p class="text-gray-700">{{ depositeRequestStore.currentDepositeRequest.publisher?.name }}</p>
+          </div>
+          
+          <div v-if="depositeRequestStore.currentDepositeRequest.pages">
+            <label class="text-sm font-medium text-gray-500">Pages</label>
+            <p class="text-gray-700">{{ depositeRequestStore.currentDepositeRequest.pages }}</p>
+          </div>
+          
           <div v-if="depositeRequestStore.currentDepositeRequest.description">
             <label class="text-sm font-medium text-gray-500">Description</label>
             <p class="text-gray-700">{{ depositeRequestStore.currentDepositeRequest.description }}</p>
           </div>
+          
           <div>
             <label class="text-sm font-medium text-gray-500">Statut</label>
             <p>
@@ -218,6 +264,7 @@ const handleReview = async () => {
               </span>
             </p>
           </div>
+          
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label class="text-sm font-medium text-gray-500">Demandeur</label>
@@ -255,6 +302,7 @@ const handleReview = async () => {
               Donner un avis
             </button>
           </div>
+          
           <div v-if="depositeRequestStore.currentDepositeRequest.reviews && depositeRequestStore.currentDepositeRequest.reviews.length > 0" class="mt-8 pt-6 border-t border-gray-200">
             <h3 class="text-lg font-semibold text-gray-800 mb-4">Historique des avis</h3>
             <div class="space-y-4">

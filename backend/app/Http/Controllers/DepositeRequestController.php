@@ -20,7 +20,7 @@ class DepositeRequestController extends Controller
      */
     public function index()
     {
-        $demandes = DepositeRequest::with(['applicant', 'assignedManager', 'reviews.reviewer'])->orderBy('created_at', 'desc')->get();
+        $demandes = DepositeRequest::with(['applicant', 'assignedManager', 'reviews.reviewer', 'category', 'publisher'])->orderBy('created_at', 'desc')->get();
 
         return response()->json([
             'success' => true,
@@ -238,7 +238,7 @@ class DepositeRequestController extends Controller
         $demande->assigned_manager_id = $request->manager_id;
         $demande->status = 'assigned';
         $demande->save();
-        $demande->load(['applicant', 'assignedManager', 'reviews.reviewer']);
+        $demande->load(['applicant', 'assignedManager', 'reviews.reviewer', 'category', 'publisher']);
 
         return response()->json([
             'success' => true,
@@ -276,7 +276,7 @@ class DepositeRequestController extends Controller
         $demande->assigned_manager_id = $request->manager_id;
         $demande->status = 'reassigned';
         $demande->save();
-        $demande->load(['applicant', 'assignedManager', 'reviews.reviewer']);
+        $demande->load(['applicant', 'assignedManager', 'reviews.reviewer', 'category', 'publisher']);
 
         return response()->json([
             'success' => true,
@@ -322,7 +322,7 @@ class DepositeRequestController extends Controller
 
         $demande->status = $request->decision === 'approved' ? 'approved_by_manager' : 'rejected_by_manager';
         $demande->save();
-        $demande->load(['applicant', 'assignedManager', 'reviews.reviewer']);
+        $demande->load(['applicant', 'assignedManager', 'reviews.reviewer', 'category', 'publisher']);
 
         return response()->json([
             'success' => true,
@@ -368,7 +368,7 @@ class DepositeRequestController extends Controller
             'is_new' => true
         ]);
 
-        $demande->load(['applicant', 'assignedManager', 'reviews.reviewer']);
+        $demande->load(['applicant', 'assignedManager', 'reviews.reviewer', 'category', 'publisher']);
 
         return response()->json([
             'success' => true,
@@ -413,7 +413,7 @@ class DepositeRequestController extends Controller
 
         $demande->status = 'rejected';
         $demande->save();
-        $demande->load(['applicant', 'assignedManager', 'reviews.reviewer']);
+        $demande->load(['applicant', 'assignedManager', 'reviews.reviewer', 'category', 'publisher']);
 
         return response()->json([
             'success' => true,

@@ -165,7 +165,7 @@ const closeDeleteModal = () => {
 
 const handleDelete = async () => {
   try {
-    await referenceStore.deleteReference(referenceToDelete.value.id)
+    await referenceStore.archiveReference(referenceToDelete.value.id)
     toast.add({ severity: 'success', summary: 'Succès', detail: 'Référence archivée avec succès', life: 3000 })
     closeDeleteModal()
   } catch (err) {

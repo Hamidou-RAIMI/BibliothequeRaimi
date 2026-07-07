@@ -26,20 +26,45 @@ class UserController extends Controller
     public function index(Request $request)
     {
         $perPage = $request->input('per_page', 10);
-        $users = User::paginate($perPage);
+        $search = $request->input('search');
+        $role = $request->input('role');
+        $status = $request->input('status');
+
+        $query = User::query();
+
+        // Recherche par nom/prénom/email
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('first_name', 'like', '%' . $search . '%')
+                  ->orWhere('last_name', 'like', '%' . $search . '%')
+                  ->orWhere('email', 'like', '%' . $search . '%');
+            });
+        }
+
+        // Filtre par rôle
+        if ($role) {
+            $query->where('role', $role);
+        }
+
+        // Filtre par statut
+        if ($status) {
+            $query->where('status', $status);
+        }
+
+        // Pagination
+        $users = $query->paginate($perPage);
 
         return response()->json([
-            'success' => true,
-            'message' => 'Liste des utilisateurs récupérée avec succès',
-            'data' => $users->items(),
+            'users' => $users->items(),
             'pagination' => [
                 'current_page' => $users->currentPage(),
                 'last_page' => $users->lastPage(),
                 'per_page' => $users->perPage(),
                 'total' => $users->total(),
-                'has_more_pages' => $users->hasMorePages(),
+                'from' => $users->firstItem(),
+                'to' => $users->lastItem(),
             ]
-        ], 200);
+        ]);
     }
 
     /**

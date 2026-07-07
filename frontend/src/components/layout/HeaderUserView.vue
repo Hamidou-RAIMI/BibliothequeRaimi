@@ -59,7 +59,6 @@ const isMobileMenuOpen = ref(false)
                 <p class="text-xs text-slate-500">Connecté en tant que</p>
                 <p class="text-sm font-medium text-slate-800 truncate">raouf.raimi</p>
               </div>
-              <a href="#" class="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50">Mon profil</a>
               <a href="#" class="block px-4 py-2 text-sm text-red-600 hover:bg-slate-50">Déconnexion</a>
             </div>
           </div>

@@ -27,26 +27,34 @@ export const useUserStore = defineStore('user', () => {
   // ========================================================================
   // ACTION 1 : RÉCUPÉRER TOUS LES UTILISATEURS (NON ARCHIVÉS)
   // ========================================================================
-  const fetchUsers = async (page = 1) => {
-    loading.value = true
-    error.value = null
-    try {
-      const response = await client.get(`/users?page=${page}&per_page=${pagination.value.perPage}`)
-      users.value = response.data.data
-      pagination.value = {
-        currentPage: response.data.pagination.current_page,
-        lastPage: response.data.pagination.last_page,
-        perPage: response.data.pagination.per_page,
-        total: response.data.pagination.total,
-        hasMorePages: response.data.pagination.has_more_pages,
-      }
-    } catch (err) {
-      error.value = err.response?.data?.message || 'Erreur lors du chargement des utilisateurs'
-      console.error('Erreur fetchUsers:', err)
-      throw err
-    } finally {
-      loading.value = false
+  const fetchUsers = async (page = 1, filters = {}) => {
+     loading.value = true
+  error.value = null
+  
+  try {
+    const params = {
+      page,
+      per_page: pagination.value.perPage,
+      ...filters,
     }
+    
+    // Enlever les paramètres vides
+    Object.keys(params).forEach(key => {
+      if (params[key] === null || params[key] === '' || params[key] === undefined) {
+        delete params[key]
+      }
+    })
+    
+    const response = await client.get('/users', { params })
+    users.value = response.data.users
+    pagination.value = response.data.pagination
+  } catch (err) {
+    error.value = err.response?.data?.message || 'Erreur lors du chargement des utilisateurs'
+    console.error('Erreur fetch users:', err)
+    
+  } finally {
+    loading.value = false
+  }
   }
 
   // ========================================================================

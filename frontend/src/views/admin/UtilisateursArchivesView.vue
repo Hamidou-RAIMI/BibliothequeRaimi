@@ -3,7 +3,8 @@ import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { Toast } from 'primevue'
-import { Paginator } from 'primevue/paginator'
+import Paginator  from 'primevue/paginator'
+
 import { useToast } from 'primevue/usetoast'
 
 const userStore = useUserStore()

@@ -65,12 +65,6 @@ class CategorieSeeder extends Seeder
             );
         }
 
-        // Vérifie le nombre de catégories existantes avant d'ajouter les 5 aléatoires
-        $nbCategoriesExistantes = Categorie::count();
-        if ($nbCategoriesExistantes < 13) {
-            // Ajoute 5 catégories aléatoires supplémentaires avec le factory
-            // Cela donne encore plus de variété au catalogue
-            Categorie::factory(5)->create();
-        }
+        
     }
 }
